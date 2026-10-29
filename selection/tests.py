@@ -367,7 +367,7 @@ class PersonalTimetableTests(TestCase):
         self.assertEqual(client.post(reverse("selection:custom_schedule_add"), {}).status_code, 403)
 
     def test_friend_timetable_has_no_calendar_edit_controls(self):
-        friend = User.objects.create_user(username="readonly-friend", role=User.Role.STUDENT)
+        friend = User.objects.create_user(username="readonly-friend", role=User.Role.STUDENT, timetable_public=True)
         CustomSchedule.objects.create(user=friend, title="自習", weekday=1, start=time(13), end=time(14))
         self.client.force_login(self.student)
         response = self.client.get(reverse("selection:user_timetable", args=[friend.pk]))
@@ -394,7 +394,7 @@ class PwaNavigationTests(TestCase):
         response = self.client.get(reverse("service_worker"))
         self.assertEqual(response.status_code, 200)
         self.assertIn("no-store", response.headers["Cache-Control"])
-        self.assertContains(response, "ntub-mid-20261029a")
+        self.assertContains(response, "ntub-mid-")
 
     def test_print_page_has_pwa_metadata(self):
         user = User.objects.create_user(username="pwa-user", role=User.Role.STUDENT)

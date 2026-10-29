@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}好友、群組與隱私 · NTUB 個人課表{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{% static 'css/connections.css' %}?v=20261029b">{% endblock %}
+{% block content %}
+<div class="connections-workspace">
+  <header class="connections-heading"><div><p>一起安排，也保有自己的空間</p><h1>好友、群組與隱私</h1><p>同班名單自動顯示，好友須雙方同意。課表是否分享，由每個人決定。</p></div><a class="btn btn-outline" href="{% url 'selection:timetable' %}">回我的課表</a></header>
+  <nav class="connections-jumps" aria-label="好友頁面區段"><a href="#privacy">分享設定</a><a href="#friends">好友與邀請</a><a href="#classmates">同班同學</a><a href="#groups">我的群組</a></nav>
+  <section class="panel" id="privacy">
+    <h2>誰可以看我的課表？</h2>
+    <p class="panel-sub">以下範圍可以複選，符合任一項即可查看。全部取消就是僅自己可見。分享包含課程、個人行程、地點與備註，請確認內容適合分享。</p>
+    <form method="post" action="{% url 'accounts:privacy' %}" class="connections-form">
+      {% csrf_token %}{{ privacy_form.non_field_errors }}
+      <div class="privacy-options">
+        <label>{{ privacy_form.share_with_classmates }}<span><strong>同班同學</strong><small>依目前綁定班級自動判斷，預設開啟；未綁定班級不會視為同班。</small></span></label>
+        <label>{{ privacy_form.share_with_friends }}<span><strong>已接受邀請的好友</strong><small>加好友不會自動開放課表，勾選後才會分享。</small></span></label>
+        <label>{{ privacy_form.timetable_public }}<span><strong>所有登入學生</strong><small>開啟後，非好友與不同班的登入學生也能查看。</small></span></label>
+      </div>
+      <fieldset class="sharing-groups"><legend>另外分享給指定群組</legend><p>僅列出自己建立或已接受邀請加入的群組，接受邀請的成員可以查看。</p>{{ privacy_form.timetable_shared_groups.errors }}{% if privacy_form.timetable_shared_groups.field.queryset %}{{ privacy_form.timetable_shared_groups }}{% else %}<p class="empty-hint">尚未加入群組，可在下方建立或接受群組邀請。</p>{% endif %}</fieldset>
+      <button class="btn btn-primary" type="submit">儲存分享設定</button>
+    </form>
+  </section>
+  <div class="connections-columns">
+    <section class="panel" id="friends">
+      <h2>好友與邀請</h2>
+      <form method="get" class="connections-search"><label for="friend-search">輸入完整帳號尋找同學</label><div><input class="input" id="friend-search" name="q" value="{{ q }}" maxlength="150" required autocomplete="off"><button class="btn btn-outline" type="submit">尋找</button></div></form>
+      {% if q %}<div class="connections-search-result">{% if search_result %}<strong>{{ search_result.display_name|default:search_result.username }}</strong><small>@{{ search_result.username }} · {{ search_result.student_class.full_name|default:"未綁定班級" }}</small>{% if search_relation %}<p>{% if search_relation.accepted %}你們已是好友。{% else %}已有待處理邀請，請在下方接受或取消。{% endif %}</p>{% else %}<form method="post" action="{% url 'accounts:friend_request' %}">{% csrf_token %}<input type="hidden" name="username" value="{{ search_result.username }}"><button class="btn btn-primary" type="submit">送出好友邀請</button></form>{% endif %}{% else %}<p>找不到這個學生帳號，請確認完整帳號；無法搜尋自己。</p>{% endif %}</div>{% endif %}
+      <h3>收到的邀請（{{ incoming|length }}）</h3>
+      {% for item in incoming %}<div class="connection-row"><strong>{{ item.person.display_name|default:item.person.username }} <small>@{{ item.person.username }}</small></strong><div class="connection-actions"><form method="post" action="{% url 'accounts:friend_action' item.relation.pk 'accept' %}">{% csrf_token %}<button class="btn btn-sm btn-primary" type="submit">接受好友</button></form><form method="post" action="{% url 'accounts:friend_action' item.relation.pk 'remove' %}">{% csrf_token %}<button class="btn btn-sm btn-outline" type="submit">拒絕</button></form></div></div>{% empty %}<p class="empty-hint">目前沒有好友邀請。</p>{% endfor %}
+      <h3>已送出的邀請（{{ outgoing|length }}）</h3>
+      {% for item in outgoing %}<div class="connection-row"><span>{{ item.person.display_name|default:item.person.username }} <small>@{{ item.person.username }}</small></span><form method="post" action="{% url 'accounts:friend_action' item.relation.pk 'remove' %}">{% csrf_token %}<button class="btn btn-sm btn-outline" type="submit">取消邀請</button></form></div>{% empty %}<p class="empty-hint">沒有等待回覆的邀請。</p>{% endfor %}
+      <h3>我的好友（{{ friends|length }}）</h3>
+      {% include "accounts/people_list.html" with people=friends empty_message="尚未加入好友，先用完整帳號送出邀請。" %}
+      {% if accepted %}<details class="connections-details"><summary>管理好友關係</summary><p>移除好友後，透過同班或群組的分享仍依各自設定生效。</p>{% for item in accepted %}<div class="connection-row"><span>{{ item.person.display_name|default:item.person.username }}</span><form method="post" action="{% url 'accounts:friend_action' item.relation.pk 'remove' %}">{% csrf_token %}<button class="btn btn-sm btn-outline" type="submit">移除好友</button></form></div>{% endfor %}</details>{% endif %}
+    </section>
+    <section class="panel" id="classmates"><h2>同班同學（{{ classmates|length }}）</h2><p class="panel-sub">{{ user.student_class.full_name|default:"尚未綁定班級" }}。名單預設顯示，但查看權限依對方的分享設定。</p>{% include "accounts/people_list.html" with people=classmates empty_message="目前沒有其他同班學生。" %}</section>
+  </div>
+  <section class="panel" id="groups"><h2>我的群組</h2><p class="panel-sub">建立群組後可邀請已成為好友的同學。接受邀請才加入，加入後不會自動分享自己的課表。</p>
+    <form class="connections-create" method="post" action="{% url 'accounts:group_create' %}">{% csrf_token %}{{ group_form.non_field_errors }}<label for="{{ group_form.name.id_for_label }}">群組名稱</label>{{ group_form.name.errors }}<div>{{ group_form.name }}<button class="btn btn-primary" type="submit">建立群組</button></div></form>
+    {% for invitation in group_invitations %}<div class="connection-row"><span><strong>{{ invitation.group.name }}</strong><small>{{ invitation.group.owner.display_name|default:invitation.group.owner.username }} 邀請你加入</small></span><div class="connection-actions"><form method="post" action="{% url 'accounts:membership_action' invitation.pk 'accept' %}">{% csrf_token %}<button class="btn btn-sm btn-primary" type="submit">加入群組</button></form><form method="post" action="{% url 'accounts:membership_action' invitation.pk 'remove' %}">{% csrf_token %}<button class="btn btn-sm btn-outline" type="submit">拒絕群組邀請</button></form></div></div>{% endfor %}
+    <div class="connections-group-grid">{% for item in groups %}<article class="connection-group"><header><h3>{{ item.group.name }}</h3><small>建立者：{{ item.group.owner.display_name|default:item.group.owner.username }}{% if item.is_owner %}（你）{% endif %}</small></header>
+      <div class="connection-row"><span>{{ item.group.owner.display_name|default:item.group.owner.username }}</span><div class="connection-actions"><span class="badge badge-info">建立者</span>{% if not item.is_owner and item.owner_can_view %}<a class="btn btn-sm btn-outline" href="{% url 'selection:user_timetable' item.group.owner_id %}">查看課表</a>{% endif %}</div></div>
+      {% for membership in item.memberships %}<div class="connection-row"><span>{{ membership.user.display_name|default:membership.user.username }}<small>{% if membership.accepted %}已加入{% else %}等待接受邀請{% endif %}</small></span>{% if membership.can_view and membership.user_id != user.pk %}<a class="btn btn-sm btn-outline" href="{% url 'selection:user_timetable' membership.user_id %}">查看課表</a>{% endif %}{% if item.is_owner or membership.user_id == user.pk %}<form method="post" action="{% url 'accounts:membership_action' membership.pk 'remove' %}">{% csrf_token %}<button class="btn btn-sm btn-outline" type="submit">{% if item.is_owner %}{% if membership.accepted %}移除成員{% else %}撤回邀請{% endif %}{% else %}退出群組{% endif %}</button></form>{% endif %}</div>{% endfor %}
+      {% if item.is_owner %}{% if item.invitees %}<form class="connections-form" method="post" action="{% url 'accounts:group_invite' item.group.pk %}">{% csrf_token %}<label for="invite-{{ item.group.pk }}">邀請好友加入</label><select id="invite-{{ item.group.pk }}" class="input" name="username" required>{% for person in item.invitees %}<option value="{{ person.username }}">{{ person.display_name|default:person.username }}（{{ person.username }}）</option>{% endfor %}</select><button class="btn btn-sm btn-outline" type="submit">送出群組邀請</button></form>{% else %}<p class="empty-hint">可邀請的好友都已加入或正在等待回覆。</p>{% endif %}<details class="connections-details"><summary>解散群組</summary><p>會移除所有成員及透過這個群組的分享權限。</p><form method="post" action="{% url 'accounts:group_delete' item.group.pk %}">{% csrf_token %}<button class="btn btn-sm btn-danger" type="submit">確認解散群組</button></form></details>{% endif %}
+    </article>{% empty %}<p class="empty-hint">還沒有群組，建立一個自己的讀書或活動小組吧。</p>{% endfor %}</div>
+  </section>
+</div>
+{% endblock %}

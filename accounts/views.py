@@ -3,10 +3,12 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.db import models
+from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.cache import never_cache
 
 from .decorators import admin_role_required, student_role_required
-from .forms import CaptchaAuthenticationForm, StudentRegisterForm
+from .forms import AccountEmailForm, CaptchaAuthenticationForm, StudentRegisterForm
 from .models import User
 
 
@@ -26,21 +28,40 @@ def register(request):
         return redirect("courses:home")
     form = StudentRegisterForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        user = form.save()
+        try:
+            with transaction.atomic():
+                user = form.save()
+        except IntegrityError:
+            form.add_error(None, "帳號或 Email 已被使用，請重新輸入。")
+            return render(request, "accounts/register.html", {"form": form}, status=400)
         login(request, user)
         messages.success(request, "註冊成功，歡迎加入個人課表系統！")
         return redirect("courses:home")
     return render(request, "accounts/register.html", {"form": form})
 
 
+@never_cache
 @login_required
 def profile(request):
+    email_form = AccountEmailForm(request.POST if request.method == "POST" else None, instance=request.user)
+    if request.method == "POST" and email_form.is_valid():
+        try:
+            with transaction.atomic():
+                email_form.save()
+        except IntegrityError:
+            email_form.add_error("email", "此 Email 已被使用。")
+        else:
+            messages.success(request, "登入 Email 已更新，可使用 Email 或原帳號搭配密碼登入。")
+            return redirect("accounts:profile")
     context = {
+        "email_form": email_form,
         "active_tab": "profile",
         "total_selected": request.user.selections.filter(status="selected").count(),
         "total_customs": request.user.custom_schedules.count(),
+        "pre_count": request.user.selections.filter(status="pre").count(),
+        "rejected_count": request.user.selections.filter(status="rejected").count(),
     }
-    return render(request, "accounts/profile.html", context)
+    return render(request, "accounts/profile.html", context, status=400 if request.method == "POST" else 200)
 
 
 @login_required

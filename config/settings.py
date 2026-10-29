@@ -113,6 +113,7 @@ STORAGES = {
 }
 
 AUTH_USER_MODEL = 'accounts.User'
+AUTHENTICATION_BACKENDS = ['accounts.backends.UsernameOrEmailBackend']
 
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'courses:home'

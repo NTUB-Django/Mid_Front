@@ -1,57 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}個人中心 · NTUB 個人課表系統{% endblock %}
+{% block title %}個人中心 · NTUB 個人課表{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{% static 'css/connections.css' %}?v=20261029b">{% endblock %}
 {% block content %}
-<div class="minimal-profile-card">
-  <div class="minimal-profile-header">
-    <div class="profile-avatar-circle">
-      <svg class="profile-avatar-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-        <circle cx="12" cy="7" r="4"/>
-      </svg>
-    </div>
-    <div class="profile-header-info">
-      <div class="profile-title-row">
-        <h1 class="profile-name">{{ user.display_name|default:user.username }}</h1>
-        <span class="profile-role-badge">
-          {% if user.is_student_role %}
-            在學學生
-          {% elif user.is_school_role %}
-            學校教務端
-          {% else %}
-            系統管理員
-          {% endif %}
-        </span>
-      </div>
-      <div class="profile-school-badge">國立臺北商業大學 · {{ user.student_class.full_name|default:"自由選修學員" }}</div>
-    </div>
-  </div>
-
-  <div class="profile-stats-row">
-    <div class="p-stat-item">
-      <span class="p-stat-val">{{ pre_count }}</span>
-      <span class="p-stat-lbl">預選中課程</span>
-    </div>
-    <div class="p-stat-item p-stat-success">
-      <span class="p-stat-val">{{ selected_count }}</span>
-      <span class="p-stat-lbl">已排入我的課表</span>
-    </div>
-    <div class="p-stat-item p-stat-muted">
-      <span class="p-stat-val">{{ rejected_count }}</span>
-      <span class="p-stat-lbl">未選上／備取</span>
-    </div>
-  </div>
-
-  <div class="profile-detail-section">
-    <h3 class="profile-section-title">學籍與帳號基本資訊</h3>
-    <dl class="profile-info-grid">
-      <div><dt>登入帳號</dt><dd>{{ user.username }}</dd></div>
-      <div><dt>顯示姓名</dt><dd>{{ user.display_name|default:"—" }}</dd></div>
-      <div><dt>班級代碼</dt><dd>{{ user.student_class.code|default:"未綁定" }}</dd></div>
-      <div><dt>所屬學系</dt><dd>{{ user.student_class.dept.name|default:"全校自由選修" }}</dd></div>
-      <div><dt>學制別</dt><dd>{{ user.student_class.dept.edu.name|default:"大學部" }}</dd></div>
-      <div><dt>在學狀態</dt><dd><span class="badge badge-selected">在學中</span></dd></div>
-    </dl>
-  </div>
+<div class="connections-workspace">
+<header class="connections-heading"><div><p>我的學習空間</p><h1>{{ user.display_name|default:user.username }}</h1><p>{{ user.get_role_display }} · {{ user.student_class.full_name|default:"未綁定班級" }}</p></div>{% if user.is_student_role %}<a class="btn btn-primary" href="{% url 'accounts:connections' %}">好友與分享設定</a>{% endif %}</header>
+<div class="profile-summary"><div><strong>{{ total_selected }}</strong><span>已加入課程</span></div><div><strong>{{ total_customs }}</strong><span>個人行程</span></div><div><strong>{{ pre_count }}</strong><span>預選中課程</span></div></div>
+<div class="connections-columns"><section class="panel"><h2>帳號資訊</h2><dl class="profile-account-details"><div><dt>帳號</dt><dd>{{ user.username }}</dd></div><div><dt>Email</dt><dd>{{ user.email|default:"尚未設定" }}</dd></div><div><dt>班級</dt><dd>{{ user.student_class.full_name|default:"未綁定" }}</dd></div></dl>{% if user.is_student_role %}<p>管理好友邀請、建立群組，並決定課表要分享給哪些人。</p><a href="{% url 'accounts:connections' %}">管理好友、群組與課表隱私 →</a>{% endif %}</section>
+<section class="panel"><h2>設定登入 Email</h2><p class="panel-sub">設定後可使用 Email ＋密碼登入，原帳號仍可使用。修改時需輸入目前密碼。</p><form method="post" class="connections-form">{% csrf_token %}{{ email_form.non_field_errors }}{% for field in email_form %}<div><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}<button class="btn btn-primary" type="submit">儲存登入 Email</button></form></section></div>
 </div>
 {% endblock %}

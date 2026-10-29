@@ -1,13 +1,16 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.views.decorators.cache import never_cache
 
 from accounts.decorators import admin_role_required, school_role_required, student_role_required
+from accounts.social import can_view_timetable, friend_ids, people_rows
 from courses.models import Department, EduType, Offering, StudentClass
 
 from .forms import CustomScheduleForm, ImportClassScheduleForm, SelectionPreferenceForm
@@ -60,6 +63,7 @@ def _mobile_timetable_data(timetable_data, today_weekday=None):
     return days
 
 
+@never_cache
 @login_required
 @student_role_required
 def timetable(request):
@@ -96,12 +100,7 @@ def _render_timetable(request, custom_form=None, editing_schedule=None, status=2
             .exclude(id=request.user.id)
             .order_by("username")
         )
-    other_friends = list(
-        User.objects.filter(role=User.Role.STUDENT)
-        .exclude(id=request.user.id)
-        .exclude(id__in=[c.id for c in classmates])
-        .select_related("student_class", "student_class__dept")[:15]
-    )
+    other_friends = User.objects.filter(pk__in=friend_ids(request.user), role=User.Role.STUDENT, is_active=True).select_related("student_class", "student_class__dept").order_by("username")
 
     context = {
         "active_tab": "timetable",
@@ -127,8 +126,8 @@ def _render_timetable(request, custom_form=None, editing_schedule=None, status=2
         "all_edus": all_edus,
         "all_depts": all_depts,
         "all_classes": all_classes,
-        "classmates": classmates,
-        "other_friends": other_friends,
+        "classmates": people_rows(request.user, classmates),
+        "other_friends": people_rows(request.user, other_friends),
         "mobile_timetable_days": _mobile_timetable_data(
             timetable_data, today_weekday=stats["today_weekday"]
         ),
@@ -136,11 +135,14 @@ def _render_timetable(request, custom_form=None, editing_schedule=None, status=2
     return render(request, "selection/timetable.html", context, status=status)
 
 
+@never_cache
 @login_required
 def user_timetable(request, user_id):
     pass
     User = request.user.__class__
     target_user = get_object_or_404(User, pk=user_id, role=User.Role.STUDENT)
+    if not can_view_timetable(request.user, target_user):
+        raise PermissionDenied("對方尚未開放課表給你查看。")
     timetable_data = build_personal_timetable(target_user, full_grid=True)
     stats = get_timetable_stats(target_user)
     enrolled_courses = (

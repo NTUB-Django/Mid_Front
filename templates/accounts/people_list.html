@@ -1,0 +1,3 @@
+{% for row in people %}
+<div class="connection-row"><span><strong>{{ row.person.display_name|default:row.person.username }}</strong><small>@{{ row.person.username }} · {{ row.person.student_class.full_name|default:"未綁定班級" }}</small></span>{% if row.can_view %}<a class="btn btn-sm btn-outline" href="{% url 'selection:user_timetable' row.person.pk %}">查看課表</a>{% else %}<span class="connection-private">尚未分享給你</span>{% endif %}</div>
+{% empty %}<p class="empty-hint">{{ empty_message }}</p>{% endfor %}

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ntub-mid-20261029a';
+const CACHE_NAME = 'ntub-mid-20261029b';
 const PRECACHE_ASSETS = [
   '/static/css/app.css',
   '/static/css/course-workspace.css?v=20261029a',

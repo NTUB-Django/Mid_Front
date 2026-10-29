@@ -49,6 +49,7 @@
 
         {% endif %}
 
+        {% if user.is_student_role %}<a class="nav-link {% if active_tab == 'connections' %}is-active{% endif %}" href="{% url 'accounts:connections' %}">好友與群組</a>{% endif %}
         <div class="navigation-account"><span>{{ user.display_name|default:user.username }}</span><small>{% if user.is_school_role %}教務／行政{% else %}學生{% endif %}</small></div>
         <form class="inline-form" method="post" action="{% url 'accounts:logout' %}">
           {% csrf_token %}

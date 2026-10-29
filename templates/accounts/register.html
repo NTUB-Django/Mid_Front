@@ -1,60 +1,17 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}註冊新帳號 · NTUB個人課表系統{% endblock %}
-
-{% block content %}
-<div class="auth-wrap">
-  <div class="auth-card" style="border-radius: 28px; border: 1.5px solid rgba(35, 103, 70, 0.16); box-shadow: 0 20px 50px rgba(18, 18, 18, 0.07); padding: 40px 36px;">
-
-
-    <div class="auth-logo" style="margin-bottom: 16px;">
-      <div style="width: 72px; height: 72px; border-radius: 16px; padding: 0; background: transparent; border: 0; box-shadow: none; display: flex; align-items: center; justify-content: center;">
-        <img src="{% static 'img/timetable-icon.svg' %}" alt="NTUB 課表圖示" style="width: 100%; height: 100%; object-fit: contain;">
-      </div>
-    </div>
-
-    <h1 class="auth-title" style="font-family: var(--playfair-display); color: var(--secondary-color); margin-bottom: 8px;">註冊新帳號</h1>
-    <p style="text-align: center; font-size: 13px; color: var(--black-500); margin: 0 0 24px 0;">加入 NTUB 個人課表，享受日系極簡選課排程體驗</p>
-
-    {% for field, errors in form.errors.items %}
-      {% for e in errors %}
-        <div class="alert alert-error" style="background: #edf3f6; border: 1px solid #d0dfe7; color: #31566d; padding: 8px 12px; border-radius: 10px; font-size: 13px; margin-bottom: 12px;">
-          {{ field }}: {{ e }}
-        </div>
-      {% endfor %}
-    {% endfor %}
-
-    <form method="post" class="form-stack">
-      {% csrf_token %}
-      <div class="form-row">
-        <label for="id_username" style="font-size: 13.5px; font-weight: 600; color: #1e293b;">帳號 / 學號 *</label>
-        <input type="text" name="username" id="id_username" maxlength="150" required autofocus placeholder="請輸入學號或帳號 (例: 11246001)" style="border-radius: 14px; border: 1.5px solid #dcd4c8; padding: 12px 14px; font-size: 14px; width: 100%; box-sizing: border-box;">
-        <p class="form-help" style="font-size: 12px; color: #94a3b8; margin-top: 4px;">150 字元以內。僅限字母、數字以及 @/./+/-/_</p>
-      </div>
-
-      <div class="form-row">
-        <label for="id_display_name" style="font-size: 13.5px; font-weight: 600; color: #1e293b;">姓名 / 顯示名稱</label>
-        <input type="text" name="display_name" id="id_display_name" maxlength="60" placeholder="例如：王小明" style="border-radius: 14px; border: 1.5px solid #dcd4c8; padding: 12px 14px; font-size: 14px; width: 100%; box-sizing: border-box;">
-      </div>
-
-      <div class="form-row">
-        <label for="id_password1" style="font-size: 13.5px; font-weight: 600; color: #1e293b;">密碼 *</label>
-        <input type="password" name="password1" id="id_password1" autocomplete="new-password" required placeholder="請設定登入密碼" style="border-radius: 14px; border: 1.5px solid #dcd4c8; padding: 12px 14px; font-size: 14px; width: 100%; box-sizing: border-box;">
-      </div>
-
-      <div class="form-row">
-        <label for="id_password2" style="font-size: 13.5px; font-weight: 600; color: #1e293b;">確認密碼 *</label>
-        <input type="password" name="password2" id="id_password2" autocomplete="new-password" required placeholder="請再次輸入密碼以確認" style="border-radius: 14px; border: 1.5px solid #dcd4c8; padding: 12px 14px; font-size: 14px; width: 100%; box-sizing: border-box;">
-      </div>
-
-      <button class="btn btn-primary btn-block" type="submit" style="background: var(--primary-color) !important; border-radius: 46px !important; padding: 14px 0 !important; font-size: 15px !important; font-weight: 700 !important; margin-top: 10px !important; width: 100% !important; box-shadow: 0 8px 20px rgba(35, 103, 70, 0.3) !important;">
-        確認註冊並登入
-      </button>
-    </form>
-
-    <p class="auth-switch" style="text-align: center; margin-top: 20px; font-size: 13.5px; color: #64748b;">
-      已經有帳號？<a href="{% url 'accounts:login' %}" style="color: var(--primary-color); font-weight: 700; text-decoration: none;">直接登入</a>
-    </p>
-  </div>
-</div>
+{% block title %}建立學生帳號 · NTUB Django{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{% static 'css/signin.css' %}?v=20261029b">{% endblock %}
+{% block page_layout %}
+<div class="signin-page">
+<header class="signin-header"><a class="signin-brand" href="{% url 'courses:home' %}"><img src="{% static 'img/timetable-icon.svg' %}" alt="" width="32" height="32">NTUB Django</a><a href="{% url 'accounts:login' %}">已有帳號？登入</a></header>
+<main id="main-content" class="signin-main signin-main-register" tabindex="-1">
+<aside class="signin-story"><span class="signin-eyebrow">YOUR WEEK, YOUR SPACE</span><h2>從一張課表，<br>開始新學期。</h2><p>加入課程、安排個人行程，<br>再選擇想分享的好友與群組。</p></aside>
+<section class="signin-form-panel" aria-labelledby="register-title"><h1 id="register-title">建立學生帳號</h1><p class="signin-intro">註冊後可用帳號或 Email 搭配密碼登入。</p>
+{% if form.non_field_errors %}<div class="signin-notice" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+<form method="post" class="signin-form">{% csrf_token %}
+{% for field in form %}<div class="signin-field"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>{{ field }}{% for error in field.errors %}<p class="signin-error" role="alert">{{ error }}</p>{% endfor %}{% if field.help_text %}<div class="signin-field-help">{{ field.help_text|safe }}</div>{% endif %}</div>{% endfor %}
+<button class="signin-submit" type="submit">建立帳號並登入</button></form>
+<p class="signin-register">已經有帳號？ <a href="{% url 'accounts:login' %}">直接登入</a></p></section>
+</main><footer class="signin-footer">NTUB Django · 課表與選課</footer></div>
 {% endblock %}

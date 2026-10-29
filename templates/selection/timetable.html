@@ -19,7 +19,7 @@
     <div class="app-modal-header">
       <div>
         <h2 id="friends-title" class="app-modal-title">好友與同班同學</h2>
-        <p class="app-modal-sub">選擇同學，查看已公開的每週安排。</p>
+        <p class="app-modal-sub">依對方的分享設定查看課表。<a href="{% url 'accounts:connections' %}">管理好友、群組與隱私 →</a></p>
       </div>
       <button type="button" class="app-modal-close" id="close-friends-btn" aria-label="關閉視窗">×</button>
     </div>
@@ -30,48 +30,16 @@
         同班同學 ({{ classmates|length }})
       </button>
       <button type="button" class="app-tab-btn" id="tab-others-btn">
-        跨系同學 ({{ other_friends|length }})
+        我的好友 ({{ other_friends|length }})
       </button>
     </div>
 
 
     <div class="app-friends-list" id="list-classmates">
-      {% for stu in classmates %}
-        <div class="app-friend-row">
-          <div class="app-friend-avatar">
-            {{ stu.display_name|slice:":1"|default:stu.username|slice:":1" }}
-          </div>
-          <div class="app-friend-info">
-            <strong class="app-friend-name">{{ stu.display_name|default:stu.username }}</strong>
-            <span class="app-friend-dept">{{ stu.student_class.full_name|default:"同班" }}</span>
-          </div>
-          <a href="{% url 'selection:user_timetable' stu.id %}" class="btn btn-sm btn-outline app-view-btn" title="查看課表">
-            查看課表
-          </a>
-        </div>
-      {% empty %}
-        <p class="empty-hint">目前同班尚無其他註冊學生。</p>
-      {% endfor %}
+      {% include "accounts/people_list.html" with people=classmates empty_message="目前同班尚無其他註冊學生。" %}
     </div>
-
-
     <div class="app-friends-list" id="list-others" hidden>
-      {% for stu in other_friends %}
-        <div class="app-friend-row">
-          <div class="app-friend-avatar app-friend-avatar-other">
-            {{ stu.display_name|slice:":1"|default:stu.username|slice:":1" }}
-          </div>
-          <div class="app-friend-info">
-            <strong class="app-friend-name">{{ stu.display_name|default:stu.username }}</strong>
-            <span class="app-friend-dept">{{ stu.student_class.full_name|default:"全校同學" }}</span>
-          </div>
-          <a href="{% url 'selection:user_timetable' stu.id %}" class="btn btn-sm btn-outline app-view-btn" title="查看課表">
-            查看課表
-          </a>
-        </div>
-      {% empty %}
-        <p class="empty-hint">尚無其他學生帳號。</p>
-      {% endfor %}
+      {% include "accounts/people_list.html" with people=other_friends empty_message="尚未加入好友，請至好友管理送出邀請。" %}
     </div>
   </div>
 </div>
@@ -234,7 +202,7 @@
 {{ schedule_editor_data|json_script:"schedule-editor-data" }}
 {% include "selection/schedule_editor.html" %}
 {% endblock %}
-{% block page_css %}<link rel="stylesheet" href="{% static 'css/course-workspace.css' %}?v=20261029a"><link rel="stylesheet" href="{% static 'css/schedule-editor.css' %}?v=20261029a">{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{% static 'css/connections.css' %}?v=20261029b"><link rel="stylesheet" href="{% static 'css/course-workspace.css' %}?v=20261029a"><link rel="stylesheet" href="{% static 'css/schedule-editor.css' %}?v=20261029a">{% endblock %}
 {% block footer_js %}
 <script src="{% static 'js/schedule-editor.js' %}?v=20261029a" defer></script>
 <script>

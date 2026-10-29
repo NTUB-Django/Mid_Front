@@ -12,6 +12,7 @@
     <a href="{% url 'selection:timetable' %}" {% if active_tab == 'timetable' %}aria-current="page"{% endif %}><span aria-hidden="true">▤</span>我的課表</a>
     <a href="{% url 'courses:browse' %}" {% if active_tab == 'browse' %}aria-current="page"{% endif %}><span aria-hidden="true">⌕</span>尋找課程</a>
 
+    {% if user.is_student_role %}<a href="{% url 'accounts:connections' %}" {% if active_tab == 'connections' %}aria-current="page"{% endif %}><span aria-hidden="true">♧</span>好友與群組</a>{% endif %}
     {% endif %}
   </nav>
   <div class="workspace-sidebar-note">NTUB Django<br><span>課程與行程，在這裡整理。</span></div>

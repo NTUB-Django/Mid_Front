@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}登入｜NTUB Django{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/signin.css' %}?v=20261018a">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/signin.css' %}?v=20261029b">{% endblock %}
 {% block page_layout %}
 <div class="signin-page">
 <header class="signin-header"><a class="signin-brand" href="{% url 'courses:home' %}"><img src="{% static 'img/timetable-icon.svg' %}" alt="" width="32" height="32">NTUB Django</a><a href="{% url 'courses:home' %}">回首頁</a></header>
 <main id="main-content" class="signin-main" tabindex="-1">
-<section class="signin-form-panel" aria-labelledby="signin-title">
-<h1 id="signin-title">登入</h1><p class="signin-intro">登入帳號，繼續安排你的課程。</p>
+<aside class="signin-story"><span class="signin-eyebrow">NTUB · CAMPUS PLANNER</span><h2>課程與生活，<br>安排在一起。</h2><p>整理每週課表、約好讀書時間。<br>分享給誰，由你決定。</p><div class="signin-preview" aria-hidden="true"><span>THIS WEEK</span><div>09:00 <b>程式設計</b></div><div>13:00 <b>讀書小組</b></div><div>16:00 <b>留一點時間給自己</b></div></div></aside><section class="signin-form-panel" aria-labelledby="signin-title">
+<h1 id="signin-title">登入</h1><p class="signin-intro">用帳號或 Email 搭配密碼，繼續安排你的課程。</p>
 {% if messages %}{% for message in messages %}<div class="signin-notice" role="status">{{ message }}</div>{% endfor %}{% endif %}
 {% if form.non_field_errors %}<div class="signin-notice" role="alert">{{ form.non_field_errors.0 }}</div>{% endif %}
 <form method="post" id="signin-form" class="signin-form">{% csrf_token %}
 {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-<div class="signin-field"><label for="id_username">學號／帳號</label>{{ form.username }}{% for error in form.username.errors %}<p class="signin-error" role="alert">{{ error }}</p>{% endfor %}</div>
+<div class="signin-field"><label for="id_username">帳號或 Email</label>{{ form.username }}{% for error in form.username.errors %}<p class="signin-error" role="alert">{{ error }}</p>{% endfor %}</div>
 <div class="signin-field"><label for="id_password">密碼</label><div class="signin-password">{{ form.password }}<button type="button" id="password-toggle" aria-controls="id_password" aria-pressed="false">顯示</button></div>{% for error in form.password.errors %}<p class="signin-error" role="alert">{{ error }}</p>{% endfor %}</div>
 <div class="signin-field"><div class="signin-label-row"><label for="id_captcha_1">圖片驗證碼</label><button type="button" id="captcha-reload-btn">換一張</button></div><div class="signin-captcha">{{ form.captcha }}</div>{% for error in form.captcha.errors %}<p class="signin-error" role="alert">{{ error }}</p>{% endfor %}<p class="signin-error" id="captcha-status" role="status"></p></div>
 <label class="signin-remember"><input type="checkbox" name="remember_me" checked><span>保持登入 14 天</span></label>
@@ -23,5 +23,5 @@
 </section>
 </main><footer class="signin-footer">NTUB Django · 課表與選課</footer>
 </div>
-<script src="{% static 'js/signin.js' %}?v=20261018a" defer></script>
+<script src="{% static 'js/signin.js' %}?v=20261029b" defer></script>
 {% endblock %}
