@@ -1,10 +1,14 @@
 from django.urls import path
 
-from . import import_views, views
+from . import calendar_views, import_views, views
 
 app_name = "selection"
 
 urlpatterns = [
+    path("calendar/", calendar_views.calendar_page, name="calendar"),
+    path("calendar/events/new/", calendar_views.event_edit, name="event_new"),
+    path("calendar/events/<int:pk>/", calendar_views.event_edit, name="event_edit"),
+    path("calendar/events/<int:pk>/delete/", calendar_views.event_delete, name="event_delete"),
     path("import/excel/", import_views.excel_import, name="excel_import"),
     path("import/excel/confirm/", import_views.excel_confirm, name="excel_confirm"),
     path("import/excel/template/", import_views.excel_template, name="excel_template"),

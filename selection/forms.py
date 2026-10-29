@@ -3,7 +3,7 @@ from django import forms
 
 from courses.models import Department, EduType, OfferingSlot, StudentClass
 
-from .models import COLOR_CHOICES, CustomSchedule, Selection
+from .models import COLOR_CHOICES, CustomSchedule, PersonalEvent, Selection
 from accounts.social import member_groups
 
 
@@ -98,3 +98,38 @@ class SelectionPreferenceForm(forms.ModelForm):
             "notes": forms.TextInput(attrs={"class": "input", "placeholder": "自訂這門課的備註或代辦事項"}),
             "color": forms.Select(attrs={"class": "input"}),
         }
+
+
+class PersonalEventForm(forms.ModelForm):
+    starts_at = forms.SplitDateTimeField(
+        label="開始日期與時間",
+        widget=forms.SplitDateTimeWidget(date_attrs={"type": "date", "class": "input"}, time_attrs={"type": "time", "class": "input"}, time_format="%H:%M"),
+    )
+    ends_at = forms.SplitDateTimeField(
+        label="結束日期與時間",
+        widget=forms.SplitDateTimeWidget(date_attrs={"type": "date", "class": "input"}, time_attrs={"type": "time", "class": "input"}, time_format="%H:%M"),
+    )
+
+    class Meta:
+        model = PersonalEvent
+        fields = ["title", "starts_at", "ends_at", "location", "color", "note", "visibility", "shared_groups"]
+        widgets = {
+            "title": forms.TextInput(attrs={"class": "input"}),
+            "location": forms.TextInput(attrs={"class": "input"}),
+            "color": forms.Select(attrs={"class": "input"}),
+            "note": forms.Textarea(attrs={"class": "input", "rows": 3}),
+            "visibility": forms.Select(attrs={"class": "input"}),
+            "shared_groups": forms.CheckboxSelectMultiple(),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["shared_groups"].queryset = member_groups(user) if user else self.fields["shared_groups"].queryset.none()
+
+    def clean(self):
+        data = super().clean()
+        if data.get("starts_at") and data.get("ends_at") and data["ends_at"] <= data["starts_at"]:
+            self.add_error("ends_at", "結束時間必須晚於開始時間。")
+        if data.get("visibility") == PersonalEvent.Visibility.GROUPS and not data.get("shared_groups"):
+            self.add_error("shared_groups", "請選擇至少一個已加入的群組。")
+        return data

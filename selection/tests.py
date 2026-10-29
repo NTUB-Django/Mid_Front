@@ -119,11 +119,23 @@ class PersonalTimetableTests(TestCase):
     def test_conflicting_course_returns_popup_notice_without_adding(self):
         add_course_to_timetable(self.student, self.offering_a)
         self.client.force_login(self.student)
-        response = self.client.get(reverse("selection:course_add", args=[self.offering_b.pk]), follow=True)
+        response = self.client.post(reverse("selection:course_add", args=[self.offering_b.pk]), follow=True)
         self.assertContains(response, 'data-schedule-conflict data-conflict-kind="blocked"')
         self.assertContains(response, 'id="schedule-conflict-dialog"')
         self.assertContains(response, "09:10–10:00")
         self.assertFalse(Selection.objects.filter(user=self.student, offering=self.offering_b).exists())
+
+    def test_course_changes_reject_get_and_unsafe_referer(self):
+        self.client.force_login(self.student)
+        add_url = reverse("selection:course_add", args=[self.offering_a.pk])
+        remove_url = reverse("selection:course_remove", args=[self.offering_a.pk])
+        self.assertEqual(self.client.get(add_url).status_code, 405)
+        self.assertFalse(Selection.objects.filter(user=self.student, offering=self.offering_a).exists())
+        response = self.client.post(add_url, HTTP_REFERER="http://testserver.evil.example/steal")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("courses:offering_detail", args=[self.offering_a.pk]))
+        self.assertEqual(self.client.get(remove_url).status_code, 405)
+        self.assertTrue(Selection.objects.filter(user=self.student, offering=self.offering_a).exists())
 
     def test_preselected_course_still_checks_conflict_before_promotion(self):
         add_course_to_timetable(self.student, self.offering_a)

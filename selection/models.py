@@ -110,3 +110,46 @@ class CustomSchedule(models.Model):
 
     def __str__(self):
         return f"{self.user}：{self.get_weekday_display()} {self.title}（{self.start:%H:%M}-{self.end:%H:%M}）"
+
+
+class PersonalEvent(models.Model):
+    class Visibility(models.TextChoices):
+        PRIVATE = "private", "僅自己"
+        FRIENDS = "friends", "僅好友"
+        CLASSMATES = "classmates", "僅同班同學"
+        GROUPS = "groups", "指定群組"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="personal_events")
+    title = models.CharField("行程名稱", max_length=100)
+    starts_at = models.DateTimeField("開始時間")
+    ends_at = models.DateTimeField("結束時間")
+    location = models.CharField("地點", max_length=100, blank=True)
+    note = models.TextField("備註", blank=True)
+    color = models.CharField("顏色", max_length=12, choices=[(key, value["label"]) for key, value in EVENT_COLORS.items()], default="blue")
+    visibility = models.CharField("可見範圍", max_length=15, choices=Visibility.choices, default=Visibility.PRIVATE)
+    shared_groups = models.ManyToManyField("accounts.SharingGroup", blank=True, related_name="shared_personal_events")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["starts_at", "pk"]
+        constraints = [models.CheckConstraint(condition=models.Q(ends_at__gt=models.F("starts_at")), name="personal_event_positive_duration")]
+
+    @property
+    def palette(self):
+        return EVENT_COLORS.get(self.color, EVENT_COLORS["blue"])
+
+
+class AcademicTerm(models.Model):
+    name = models.CharField("學期", max_length=60)
+    starts_on = models.DateField("開學日期")
+    ends_on = models.DateField("學期課程結束日期")
+    excluded_dates = models.JSONField("停課日期", default=list, blank=True)
+    is_current = models.BooleanField("目前學期", default=False)
+
+    class Meta:
+        ordering = ["-starts_on"]
+        constraints = [models.CheckConstraint(condition=models.Q(ends_on__gte=models.F("starts_on")), name="academic_term_valid_dates")]
+
+    def __str__(self):
+        return self.name

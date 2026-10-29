@@ -167,7 +167,7 @@ class SocialPrivacyTests(TestCase):
         group = SharingGroup.objects.create(owner=self.friend, name="invited group")
         GroupMembership.objects.create(group=group, user=self.owner)
         response = self.client.get(reverse("accounts:connections"))
-        self.assertContains(response, "尚未分享給你")
+        self.assertContains(response, "尚未分享課表")
         self.assertContains(response, "invited group")
         self.assertEqual(len(response.context["friends"]), 0)
         self.assertIn("no-store", response.headers["Cache-Control"])

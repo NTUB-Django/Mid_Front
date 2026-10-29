@@ -3,7 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import models
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from datetime import timedelta
 
+from selection.calendar_views import calendar_entries
 from selection.models import CustomSchedule, Selection
 from selection.services import build_class_timetable, get_timetable_stats, get_user_selection_map
 
@@ -59,6 +62,10 @@ def home(request):
 
 
     timetable_stats = get_timetable_stats(request.user)
+    today = timezone.localdate()
+    week_start = today - timedelta(days=today.weekday())
+    agenda = calendar_entries(request.user, week_start, week_start + timedelta(days=6))
+    week_days = [{"date": week_start + timedelta(days=offset), "items": agenda[week_start + timedelta(days=offset)]} for offset in range(7)]
     enrolled_courses = (
         request.user.selections.filter(status=Selection.Status.SELECTED)
         .select_related("offering", "offering__course")
@@ -73,7 +80,10 @@ def home(request):
         "total_customs": timetable_stats["total_customs"],
         "total_credits": timetable_stats["total_credits"],
         "total_weekly_periods": timetable_stats["total_weekly_periods"],
-        "today_items": timetable_stats["today_items"],
+        "semester_periods": timetable_stats["semester_periods"],
+        "term_name": timetable_stats["term_name"],
+        "today_items": agenda[today],
+        "week_days": week_days,
         "today_weekday": timetable_stats["today_weekday"],
         "total_offering": Offering.objects.count(),
     }

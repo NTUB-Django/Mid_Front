@@ -8,7 +8,7 @@
   <nav class="connections-jumps" aria-label="好友頁面區段"><a href="#privacy">分享設定</a><a href="#friends">好友與邀請</a><a href="#classmates">同班同學</a><a href="#groups">我的群組</a></nav>
   <section class="panel" id="privacy">
     <h2>誰可以看我的課表？</h2>
-    <p class="panel-sub">以下範圍可以複選，符合任一項即可查看。全部取消就是僅自己可見。分享包含課程、個人行程、地點與備註，請確認內容適合分享。</p>
+    <p class="panel-sub">以下範圍可以複選，符合任一項即可查看固定課程。每筆個人行程及基本資料的權限在各自頁面設定。</p>
     <form method="post" action="{% url 'accounts:privacy' %}" class="connections-form">
       {% csrf_token %}{{ privacy_form.non_field_errors }}
       <div class="privacy-options">

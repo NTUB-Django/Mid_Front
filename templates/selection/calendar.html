@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}我的日曆 · NTUB 個人課表系統{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20261029a">{% endblock %}
+{% block content %}
+<main class="calendar-workspace">
+  <header class="calendar-heading"><div><p>課程與行程</p><h1>我的日曆</h1><span>固定課表、個人行程與群組活動分開保存，在同一個日曆查看。</span></div><a class="btn btn-primary" href="{% url 'selection:event_new' %}">＋ 新增行程</a></header>
+  <nav class="calendar-toolbar" aria-label="日曆檢視"><div class="calendar-modes"><a class="{% if mode == 'day' %}active{% endif %}" href="?view=day&date={{ anchor|date:'Y-m-d' }}">日</a><a class="{% if mode == 'week' %}active{% endif %}" href="?view=week&date={{ anchor|date:'Y-m-d' }}">週</a><a class="{% if mode == 'month' %}active{% endif %}" href="?view=month&date={{ anchor|date:'Y-m-d' }}">月</a><a class="{% if mode == 'list' %}active{% endif %}" href="?view=list&date={{ anchor|date:'Y-m-d' }}">行程清單</a></div><div class="calendar-navigation"><a href="?view={{ mode }}&date={{ previous|date:'Y-m-d' }}" aria-label="上一段日期">‹</a><strong>{{ anchor|date:'Y 年 n 月 j 日' }}</strong><a href="?view={{ mode }}&date={{ following|date:'Y-m-d' }}" aria-label="下一段日期">›</a><a class="calendar-today" href="?view={{ mode }}&date={{ today|date:'Y-m-d' }}">今天</a></div></nav>
+  {% if term %}<p class="calendar-term">{{ term.name }}：{{ term.starts_on|date:'Y/m/d' }}－{{ term.ends_on|date:'Y/m/d' }}；停課日不顯示固定課程。</p>{% endif %}
+  {% if mode == 'month' %}<div class="calendar-weekdays" aria-hidden="true"><span>週一</span><span>週二</span><span>週三</span><span>週四</span><span>週五</span><span>週六</span><span>週日</span></div>{% endif %}
+  <div class="calendar-days calendar-days-{{ mode }}">{% for day in days %}<section class="calendar-day{% if day.outside %} is-outside{% endif %}{% if day.date == today %} is-today{% endif %}" aria-label="{{ day.date|date:'Y 年 n 月 j 日' }}"><header><a href="?view=day&date={{ day.date|date:'Y-m-d' }}"><strong>{{ day.date|date:'j' }}</strong><span>{{ day.date|date:'D' }}</span></a><a class="calendar-day-add" href="{% url 'selection:event_new' %}?date={{ day.date|date:'Y-m-d' }}" aria-label="新增 {{ day.date|date:'Y 年 n 月 j 日' }} 的行程">＋</a></header><div class="calendar-day-items">{% for item in day.items %}<a class="calendar-item" href="{{ item.url }}" style="--event-color:{{ item.color }}"><small>{{ item.start|time:'H:i' }}－{{ item.end|time:'H:i' }} · {{ item.kind }}</small><strong>{{ item.title }}</strong>{% if mode != 'month' and item.location %}<span>{{ item.location }}</span>{% endif %}</a>{% empty %}{% if mode != 'month' %}<span class="calendar-empty">沒有安排</span>{% endif %}{% endfor %}</div></section>{% endfor %}</div>
+</main>
+{% endblock %}

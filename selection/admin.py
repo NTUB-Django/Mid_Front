@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import CustomSchedule, Selection
+from .models import AcademicTerm, CustomSchedule, PersonalEvent, Selection
 from .services import reset_allocation, run_allocation
 
 
@@ -34,3 +34,17 @@ class CustomScheduleAdmin(admin.ModelAdmin):
     list_filter = ("weekday", "color")
     search_fields = ("user__username", "user__display_name", "title", "location", "note")
     readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(PersonalEvent)
+class PersonalEventAdmin(admin.ModelAdmin):
+    list_display = ("user", "title", "starts_at", "ends_at", "visibility", "color")
+    list_filter = ("visibility", "color")
+    search_fields = ("user__username", "user__email", "title")
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(AcademicTerm)
+class AcademicTermAdmin(admin.ModelAdmin):
+    list_display = ("name", "starts_on", "ends_on", "is_current")
+    list_filter = ("is_current",)

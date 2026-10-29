@@ -32,6 +32,8 @@ class PortalSessionTests(TestCase):
         self.assertEqual(self.client.get(reverse("school:dashboard")).status_code, 200)
         self.assertEqual(self.client.get(reverse("admin:index")).status_code, 200)
         self.assertEqual(self.client.get(reverse("admin:accounts_user_add")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("admin:accounts_user_change", args=[self.student.pk])).status_code, 200)
+        self.assertEqual(self.client.get(reverse("admin:index")).status_code, 200)
         school_page = self.client.get(reverse("school:dashboard"))
         self.assertIn("no-store", school_page["Cache-Control"])
         self.client.post(reverse("school:logout"))

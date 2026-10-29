@@ -11,6 +11,8 @@ class User(AbstractUser):
 
     role = models.CharField("角色", max_length=20, choices=Role.choices, default=Role.STUDENT)
     display_name = models.CharField("顯示名稱", max_length=60, blank=True)
+    avatar = models.ImageField("頭像", upload_to="avatars/", blank=True)
+    profile_public = models.BooleanField("公開基本資料", default=False)
     email_verified_at = models.DateTimeField("Email 驗證時間", null=True, blank=True)
     timetable_public = models.BooleanField("公開給所有登入學生", default=False)
     share_with_classmates = models.BooleanField("分享給同班同學", default=True)

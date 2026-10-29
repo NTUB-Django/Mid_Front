@@ -2,6 +2,7 @@ from captcha.fields import CaptchaField
 from django import forms
 import re
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from courses.models import StudentClass
 
 from .models import GroupEvent, GroupMemo, GroupTask, SharingGroup, User
 from .social import member_groups
@@ -104,6 +105,32 @@ class AccountEmailForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+
+class StudentProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ["display_name", "student_class", "avatar", "profile_public"]
+        widgets = {
+            "display_name": forms.TextInput(attrs={"class": "input"}),
+            "student_class": forms.Select(attrs={"class": "input"}),
+            "avatar": forms.ClearableFileInput(attrs={"class": "input", "accept": "image/png,image/jpeg,image/webp"}),
+        }
+        labels = {"display_name": "顯示姓名", "student_class": "學制／系所／年級／班級", "avatar": "頭像圖片", "profile_public": "公開基本資料給其他學生"}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["student_class"].queryset = StudentClass.objects.select_related("dept", "dept__edu").order_by("dept__edu__code", "dept__name", "name")
+        self.fields["student_class"].required = False
+
+    def clean_avatar(self):
+        avatar = self.cleaned_data.get("avatar")
+        if avatar and hasattr(avatar, "size"):
+            if avatar.size > 1024 * 1024:
+                raise forms.ValidationError("頭像圖片不可超過 1 MB。")
+            if getattr(avatar, "image", None) and (avatar.image.width > 2048 or avatar.image.height > 2048):
+                raise forms.ValidationError("頭像圖片尺寸不可超過 2048 × 2048。")
+        return avatar
 
 
 class TimetablePrivacyForm(forms.ModelForm):

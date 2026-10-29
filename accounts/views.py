@@ -5,12 +5,13 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth.views import LogoutView
 from django.db import models
 from django.db import IntegrityError, transaction
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 import secrets
 
 from .decorators import admin_role_required, student_role_required
-from .forms import AccountEmailForm, CaptchaAuthenticationForm, StudentRegisterForm
+from .forms import AccountEmailForm, CaptchaAuthenticationForm, StudentProfileForm, StudentRegisterForm
 from .models import User
 
 
@@ -63,8 +64,15 @@ def register(request):
 @never_cache
 @login_required
 def profile(request):
-    email_form = AccountEmailForm(request.POST if request.method == "POST" else None, instance=request.user)
-    if request.method == "POST" and email_form.is_valid():
+    email_post = request.method == "POST" and request.POST.get("form_kind", "email") == "email"
+    profile_post = request.method == "POST" and request.POST.get("form_kind") == "profile" and request.user.is_student_role
+    email_form = AccountEmailForm(request.POST if email_post else None, instance=request.user)
+    student_form = StudentProfileForm(request.POST if profile_post else None, request.FILES if profile_post else None, instance=request.user) if request.user.is_student_role else None
+    if profile_post and student_form.is_valid():
+        student_form.save()
+        messages.success(request, "個人資料已更新。")
+        return redirect("accounts:profile")
+    if email_post and email_form.is_valid():
         try:
             with transaction.atomic():
                 email_form.save()
@@ -75,6 +83,7 @@ def profile(request):
             return redirect("school:profile" if request.session_scope == "school" else "accounts:profile")
     context = {
         "email_form": email_form,
+        "student_form": student_form,
         "active_tab": "profile",
         "total_selected": request.user.selections.filter(status="selected").count(),
         "total_customs": request.user.custom_schedules.count(),
@@ -82,6 +91,33 @@ def profile(request):
         "rejected_count": request.user.selections.filter(status="rejected").count(),
     }
     return render(request, "accounts/profile.html", context, status=400 if request.method == "POST" else 200)
+
+
+@never_cache
+@login_required
+@student_role_required
+def member_profile(request, user_id):
+    person = get_object_or_404(User, pk=user_id, role=User.Role.STUDENT, is_active=True)
+    if person.pk == request.user.pk:
+        return redirect("accounts:profile")
+    if not person.profile_public:
+        raise Http404
+    return render(request, "accounts/member_profile.html", {"person": person, "active_tab": "connections"})
+
+
+@never_cache
+@login_required
+@student_role_required
+def avatar(request, user_id):
+    person = get_object_or_404(User, pk=user_id, role=User.Role.STUDENT, is_active=True)
+    if person.pk != request.user.pk and not person.profile_public:
+        raise Http404
+    if not person.avatar:
+        raise Http404
+    response = FileResponse(person.avatar.open("rb"))
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store"
+    return response
 
 
 @login_required

@@ -91,6 +91,8 @@ body.is-school-view .topbar .btn-ghost{color:#e4ecf5}
 .site-landing .landing-navigation>a{font-size:14px;color:#53657b}
 .site-landing .site-button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:12px 20px;border-radius:5px;background:#3264f4;color:#fff;font-size:14px;font-weight:700;box-sizing:border-box}
 .site-landing .landing-navigation a.site-button,.site-landing .landing-navigation a.site-button:is(:hover,:focus,:active){color:#fff;-webkit-text-fill-color:#fff}
+.site-landing .landing-navigation a.site-button:hover,.site-landing .landing-navigation a.site-button:focus-visible{background:#204ed4;color:#fff!important;-webkit-text-fill-color:#fff!important}
+.workspace-week-list{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}.workspace-week-list article{display:grid;align-content:start;gap:8px;min-height:100px;padding:12px;border:1px solid #dce9ee;border-radius:10px;background:#f8fbfc}.workspace-week-list strong{color:#214b5d}.workspace-week-list span{font-size:.78rem;color:#5b7180;line-height:1.6}@media(max-width:850px){.workspace-week-list{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:500px){.workspace-week-list{grid-template-columns:1fr}}
 .site-intro{background:#3264f4;color:#fff}
 .site-intro-inner{width:min(1240px,100%);margin:auto;padding:64px 32px;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);align-items:center;gap:60px}
 .site-copy>p:first-child{font-size:13px;color:#e2eaff;margin:0 0 24px}

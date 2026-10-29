@@ -5,10 +5,12 @@
 <div class="minimal-profile-card">
   <div class="minimal-profile-header">
     <div class="profile-avatar-circle">
+      {% if user.avatar and user.is_student_role %}<img src="{% url 'accounts:avatar' user.pk %}" alt="{{ user.display_name|default:user.username }}的頭像" width="64" height="64" style="width:100%;height:100%;object-fit:cover;border-radius:50%">{% else %}
       <svg class="profile-avatar-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
         <circle cx="12" cy="7" r="4"/>
       </svg>
+      {% endif %}
     </div>
     <div class="profile-header-info">
       <div class="profile-title-row">
@@ -51,15 +53,22 @@
       <div><dt>班級代碼</dt><dd>{{ user.student_class.code|default:"未綁定" }}</dd></div>
       <div><dt>所屬學系</dt><dd>{{ user.student_class.dept.name|default:"全校自由選修" }}</dd></div>
       <div><dt>學制別</dt><dd>{{ user.student_class.dept.edu.name|default:"大學部" }}</dd></div>
+      {% if user.is_student_role %}<div><dt>年級</dt><dd>{{ user.student_class.grade|default:"未設定" }}</dd></div>{% endif %}
       {% if user.is_student_role %}<div><dt>在學狀態</dt><dd><span class="badge badge-selected">在學中</span></dd></div>{% endif %}
     </dl>
   </div>
 </div>
 
+{% if user.is_student_role %}<section class="panel">
+  <h2 class="panel-title">編輯個人資料</h2>
+  <p class="panel-sub">學校：國立臺北商業大學。選擇班級後會同步顯示對應的學制、系所與年級。公開基本資料與課表、個人行程的分享權限分開設定。</p>
+  <form method="post" enctype="multipart/form-data" class="form-grid">{% csrf_token %}<input type="hidden" name="form_kind" value="profile">{{ student_form.non_field_errors }}{% for field in student_form %}<div class="form-group"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}<div class="form-actions"><button type="submit" class="btn btn-primary">儲存個人資料</button></div></form>
+</section>{% endif %}
+
 <section class="panel">
   <h2 class="panel-title">設定登入 Email</h2>
   <p class="panel-sub">使用 Email 搭配密碼登入；修改時需驗證目前密碼。Email 驗證功能尚未啟用。</p>
-  <form method="post" class="form-grid">{% csrf_token %}{{ email_form.non_field_errors }}{% for field in email_form %}<div class="form-group"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}<div class="form-actions"><button type="submit" class="btn btn-primary">儲存登入 Email</button></div></form>
+  <form method="post" class="form-grid">{% csrf_token %}<input type="hidden" name="form_kind" value="email">{{ email_form.non_field_errors }}{% for field in email_form %}<div class="form-group"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}<div class="form-actions"><button type="submit" class="btn btn-primary">儲存登入 Email</button></div></form>
 </section>
 {% if user.is_student_role %}<section class="panel"><h2 class="panel-title">好友、群組與課表隱私</h2><p class="panel-sub">管理好友邀請、建立群組，設定課表分享範圍。</p><a class="btn btn-outline" href="{% url 'accounts:connections' %}">管理好友與分享設定</a></section>{% endif %}
 {% endblock %}

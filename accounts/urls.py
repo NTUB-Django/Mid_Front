@@ -31,5 +31,7 @@ urlpatterns = [
     path("logout/", views.StudentLogoutView.as_view(), name="logout"),
     path("register/", views.register, name="register"),
     path("profile/", views.profile, name="profile"),
+    path("profile/<int:user_id>/", views.member_profile, name="member_profile"),
+    path("avatar/<int:user_id>/", views.avatar, name="avatar"),
     path("roles/", views.manage_roles, name="manage_roles"),
 ]

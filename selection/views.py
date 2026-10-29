@@ -174,6 +174,7 @@ def user_timetable(request, user_id):
 
 @login_required
 @student_role_required
+@require_POST
 def course_add(request, pk):
     pass
     offering = get_object_or_404(Offering, pk=pk)
@@ -191,6 +192,7 @@ def course_add(request, pk):
 
 @login_required
 @student_role_required
+@require_POST
 def course_remove(request, pk):
     pass
     removed = remove_course_from_timetable(request.user, pk)
@@ -319,12 +321,14 @@ def results(request):
 
 @login_required
 @student_role_required
+@require_POST
 def pre_add(request, pk):
     return course_add(request, pk)
 
 
 @login_required
 @student_role_required
+@require_POST
 def pre_remove(request, pk):
     return course_remove(request, pk)
 
@@ -352,6 +356,7 @@ def console_offerings(request):
 
 @login_required
 @school_role_required
+@require_POST
 def console_capacity(request, pk):
     offering = get_object_or_404(Offering, pk=pk)
     if request.method == "POST":
@@ -364,7 +369,7 @@ def console_capacity(request, pk):
             messages.success(request, f"已更新「{offering.display_name}」名額為 {new_capacity}")
         except (TypeError, ValueError):
             messages.error(request, "名額必須是 0–9999 的整數")
-    return redirect(request.META.get("HTTP_REFERER") or "selection:console_offerings")
+    return redirect_back(request, fallback="school:offerings" if request.session_scope == "school" else "selection:console_offerings")
 
 
 @login_required

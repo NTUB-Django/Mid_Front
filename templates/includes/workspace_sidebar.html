@@ -12,6 +12,7 @@
     {% else %}
     <a href="{% url 'courses:home' %}" {% if active_tab == 'home' %}aria-current="page"{% endif %}><span aria-hidden="true">▦</span>今日總覽</a>
     <a href="{% url 'selection:timetable' %}" {% if active_tab == 'timetable' %}aria-current="page"{% endif %}><span aria-hidden="true">▤</span>我的課表</a>
+    <a href="{% url 'selection:calendar' %}" {% if active_tab == 'calendar' %}aria-current="page"{% endif %}><span aria-hidden="true">▦</span>我的日曆</a>
     <a href="{% url 'courses:browse' %}" {% if active_tab == 'browse' %}aria-current="page"{% endif %}><span aria-hidden="true">⌕</span>尋找課程</a>
 
     {% if user.is_student_role %}<a href="{% url 'accounts:connections' %}" {% if active_tab == 'connections' %}aria-current="page"{% endif %}><span aria-hidden="true">♧</span>好友與群組</a>{% endif %}

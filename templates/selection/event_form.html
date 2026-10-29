@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{% if event %}編輯行程{% else %}新增行程{% endif %} · NTUB 個人課表系統{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20261029a">{% endblock %}
+{% block content %}
+<main class="calendar-workspace"><header class="calendar-heading"><div><p>我的日曆</p><h1>{% if event %}編輯行程{% else %}新增行程{% endif %}</h1><span>每筆行程可設定獨立日期、24 小時制時間、顏色與可見範圍。</span></div><a class="btn btn-outline" href="{% url 'selection:calendar' %}">返回日曆</a></header>
+<section class="panel"><form method="post" class="form-grid calendar-event-form">{% csrf_token %}{{ form.non_field_errors }}{% for field in form %}<div class="form-group"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}{% if field.name == 'color' %}<span class="calendar-color-preview" id="calendar-color-preview">顏色預覽</span>{% endif %}</div>{% endfor %}<div class="form-actions"><button type="submit" class="btn btn-primary">{% if event %}儲存變更{% else %}新增行程{% endif %}</button><a href="{% url 'selection:calendar' %}" class="btn btn-outline">取消</a></div></form>{% if event %}<form method="post" action="{% url 'selection:event_delete' event.pk %}" onsubmit="return confirm('確定要刪除這筆個人行程嗎？')">{% csrf_token %}<button class="btn btn-outline" type="submit">刪除這筆行程</button></form>{% endif %}</section></main>
+<script src="{% static 'js/calendar-event.js' %}?v=20261029a" defer></script>
+{% endblock %}

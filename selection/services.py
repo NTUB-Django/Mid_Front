@@ -1,16 +1,18 @@
-from datetime import datetime, time
+from collections import Counter
+from datetime import datetime, time, timedelta
 import random
 
 from django.contrib import messages
 from django.db import transaction
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
 
 from courses.models import Offering, OfferingSlot
 
-from .models import CustomSchedule, ImportBatch, Selection
-from .privacy import visible_schedules
+from .models import AcademicTerm, CustomSchedule, ImportBatch, Selection
+from .privacy import visible_personal_events, visible_schedules
 
 
 STANDARD_PERIODS = [
@@ -251,14 +253,27 @@ def get_timetable_stats(user, viewer=None):
         .prefetch_related("offering__slots")
     )
     customs = visible_schedules(user, viewer)
+    personal_events = visible_personal_events(user, viewer)
+    term = AcademicTerm.objects.filter(is_current=True).order_by("-starts_on").first()
+    term_dates = Counter()
+    if term:
+        current = term.starts_on
+        excluded = set(term.excluded_dates)
+        while current <= term.ends_on:
+            if current.isoformat() not in excluded:
+                term_dates[current.isoweekday()] += 1
+            current += timedelta(days=1)
 
     total_course_count = selections.count() + customs.filter(import_source="excel").values("title").distinct().count()
-    total_custom_count = customs.filter(import_source="personal").count()
+    total_custom_count = customs.filter(import_source="personal").count() + personal_events.count()
 
     total_periods = 0
+    semester_periods = 0
     weekday_counts = {i: 0 for i in range(1, 8)}
 
-    today_weekday = timezone.localtime(timezone.now()).isoweekday()
+    today_date = timezone.localdate()
+    today_weekday = today_date.isoweekday()
+    scheduled_today = bool(term and term.starts_on <= today_date <= term.ends_on and today_date.isoformat() not in term.excluded_dates)
     today_items = []
 
     for sel in selections:
@@ -266,7 +281,8 @@ def get_timetable_stats(user, viewer=None):
         total_periods += len(slots)
         for s in slots:
             weekday_counts[s.weekday] += 1
-            if s.weekday == today_weekday:
+            semester_periods += term_dates[s.weekday]
+            if s.weekday == today_weekday and scheduled_today:
                 today_items.append(
                     {
                         "is_custom": False,
@@ -283,7 +299,9 @@ def get_timetable_stats(user, viewer=None):
     for c in customs:
         total_periods += 1
         weekday_counts[c.weekday] += 1
-        if c.weekday == today_weekday:
+        if c.import_source == "excel":
+            semester_periods += term_dates[c.weekday]
+        if c.weekday == today_weekday and (c.import_source != "excel" or scheduled_today):
             today_items.append(
                 {
                     "is_custom": True,
@@ -297,6 +315,21 @@ def get_timetable_stats(user, viewer=None):
                 }
             )
 
+    for event in personal_events:
+        starts = timezone.localtime(event.starts_at)
+        ends = timezone.localtime(event.ends_at)
+        if starts.date() <= today_date <= ends.date():
+            today_items.append({
+                "is_custom": True,
+                "title": event.title,
+                "time_str": f"{starts:%H:%M}–{ends:%H:%M}",
+                "start": starts.time(),
+                "room": event.location,
+                "teacher": "",
+                "color": event.color,
+                "id": event.pk,
+            })
+
     today_items.sort(key=lambda x: x["start"])
 
 
@@ -307,6 +340,8 @@ def get_timetable_stats(user, viewer=None):
         "total_customs": total_custom_count,
         "total_credits": course_credits,
         "total_weekly_periods": total_periods,
+        "semester_periods": semester_periods if term else None,
+        "term_name": term.name if term else "尚未設定學期",
         "weekday_counts": weekday_counts,
         "today_weekday": today_weekday,
         "today_items": today_items,
@@ -444,6 +479,6 @@ def reset_allocation():
 
 def redirect_back(request: HttpRequest, fallback="selection:timetable", fallback_args=None):
     ref = request.META.get("HTTP_REFERER")
-    if ref and ref.startswith(f"{request.scheme}://{request.get_host()}"):
+    if ref and url_has_allowed_host_and_scheme(ref, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
         return redirect(ref)
     return redirect(fallback, *fallback_args if fallback_args else [])

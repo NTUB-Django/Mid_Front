@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}{{ person.display_name|default:person.username }} · 個人資料{% endblock %}
+{% block content %}<section class="panel"><h1 class="panel-title">{{ person.display_name|default:person.username }}</h1>{% if person.avatar %}<img src="{% url 'accounts:avatar' person.pk %}" alt="{{ person.display_name|default:person.username }}的頭像" width="80" height="80" style="object-fit:cover;border-radius:50%">{% endif %}<p>國立臺北商業大學 · {{ person.student_class.full_name|default:"尚未設定班級" }}</p><p>學號：{{ person.username }}</p><a class="btn btn-outline" href="{% url 'accounts:connections' %}">返回好友與群組</a></section>{% endblock %}
