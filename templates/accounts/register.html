@@ -1,17 +1,26 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}建立學生帳號 · NTUB Django{% endblock %}
-{% block page_css %}<link rel="stylesheet" href="{% static 'css/signin.css' %}?v=20261029c">{% endblock %}
+{% block title %}建立學生帳號｜NTUB Django{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/signin.css' %}?v=20261029e">{% endblock %}
 {% block page_layout %}
 <div class="signin-page">
-<header class="signin-header"><a class="signin-brand" href="{% url 'courses:home' %}"><img src="{% static 'img/timetable-icon.svg' %}" alt="" width="32" height="32">NTUB Django</a><a href="{% url 'accounts:login' %}">已有帳號？登入</a></header>
-<main id="main-content" class="signin-main signin-main-register" tabindex="-1">
-<aside class="signin-story"><span class="signin-eyebrow">YOUR WEEK, YOUR SPACE</span><h2>從一張課表，<br>開始新學期。</h2><p>加入課程、安排個人行程，<br>再選擇想分享的好友與群組。</p></aside>
-<section class="signin-form-panel" aria-labelledby="register-title"><h1 id="register-title">建立學生帳號</h1><p class="signin-intro">註冊後可用帳號或 Email 搭配密碼登入。</p>
+<header class="signin-header"><a class="signin-brand" href="{% url 'courses:home' %}"><img src="{% static 'img/timetable-icon.svg' %}" alt="" width="32" height="32">NTUB Django</a><a href="{% url 'courses:home' %}">回首頁</a></header>
+<main id="main-content" class="signin-main" tabindex="-1">
+<section class="signin-form-panel" aria-labelledby="register-title">
+<h1 id="register-title">建立學生帳號</h1><p class="signin-intro">使用學號建立帳號，之後可用學號或 Email 搭配密碼登入。</p>
 {% if form.non_field_errors %}<div class="signin-notice" role="alert">{{ form.non_field_errors }}</div>{% endif %}
 <form method="post" class="signin-form">{% csrf_token %}
-{% for field in form %}<div class="signin-field"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>{{ field }}{% for error in field.errors %}<p class="signin-error" role="alert">{{ error }}</p>{% endfor %}{% if field.help_text %}<div class="signin-field-help">{{ field.help_text|safe }}</div>{% endif %}</div>{% endfor %}
-<button class="signin-submit" type="submit">建立帳號並登入</button></form>
-<p class="signin-register">已經有帳號？ <a href="{% url 'accounts:login' %}">直接登入</a></p></section>
-</main><footer class="signin-footer">NTUB Django · 課表與選課</footer></div>
+<div class="signin-register-identifiers">
+<div class="signin-field"><label for="id_username">學號 *</label>{{ form.username }}{% for error in form.username.errors %}<p class="signin-error" role="alert">{{ error }}</p>{% endfor %}</div>
+<div class="signin-field"><label for="id_email">Email *</label>{{ form.email }}{% for error in form.email.errors %}<p class="signin-error" role="alert">{{ error }}</p>{% endfor %}</div>
+</div>
+<div class="signin-field"><label for="id_display_name">姓名／顯示名稱</label>{{ form.display_name }}{% for error in form.display_name.errors %}<p class="signin-error" role="alert">{{ error }}</p>{% endfor %}</div>
+<div class="signin-field"><label for="id_password1">密碼 *</label>{{ form.password1 }}{% for error in form.password1.errors %}<p class="signin-error" role="alert">{{ error }}</p>{% endfor %}<p class="signin-help">至少 8 個字元，請避免常見密碼、純數字或與學號相近的內容。</p></div>
+<div class="signin-field"><label for="id_password2">確認密碼 *</label>{{ form.password2 }}{% for error in form.password2.errors %}<p class="signin-error" role="alert">{{ error }}</p>{% endfor %}</div>
+<button class="signin-submit" type="submit">建立帳號並登入</button>
+</form>
+<p class="signin-register">已經有帳號？ <a href="{% url 'accounts:login' %}">直接登入</a></p>
+</section>
+</main><footer class="signin-footer">NTUB Django · 課表與選課</footer>
+</div>
 {% endblock %}
