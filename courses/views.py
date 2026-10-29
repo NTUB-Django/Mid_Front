@@ -30,10 +30,12 @@ def home(request):
 
 
     if request.user.is_superuser or request.user.is_admin_role:
-        return redirect("selection:console_dashboard")
+        return redirect("admin:index")
 
 
     if request.user.is_school_role:
+        if not request.path.startswith("/school/"):
+            return redirect("school:dashboard")
         hot_offerings = (
             Offering.objects.annotate(
                 selected_n=models.Count("selections", filter=models.Q(selections__status="selected"))

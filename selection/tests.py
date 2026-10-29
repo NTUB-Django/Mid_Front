@@ -26,6 +26,7 @@ class PersonalTimetableTests(TestCase):
 
         self.student = User.objects.create_user(
             username="test_student",
+            email="test-student@example.com",
             password="password123",
             role=User.Role.STUDENT,
             display_name="測試同學",
@@ -210,7 +211,7 @@ class PersonalTimetableTests(TestCase):
 
     def test_views_response(self):
         pass
-        self.client.login(username="test_student", password="password123")
+        self.client.force_login(self.student)
 
 
         resp = self.client.get(reverse("courses:home"))
@@ -252,7 +253,7 @@ class PersonalTimetableTests(TestCase):
             end=time(15, 0),
         )
 
-        self.client.login(username="test_student", password="password123")
+        self.client.force_login(self.student)
         resp = self.client.post(reverse("selection:custom_schedule_delete", args=[other_custom.id]))
 
         self.assertEqual(resp.status_code, 404)
@@ -261,7 +262,7 @@ class PersonalTimetableTests(TestCase):
     def test_update_course_preference(self):
         pass
         add_course_to_timetable(self.student, self.offering_a)
-        self.client.login(username="test_student", password="password123")
+        self.client.force_login(self.student)
 
         resp = self.client.post(
             reverse("selection:course_update_pref", args=[self.offering_a.id]),
@@ -284,7 +285,7 @@ class PersonalTimetableTests(TestCase):
         )
         add_course_to_timetable(friend, self.offering_a)
 
-        self.client.login(username="test_student", password="password123")
+        self.client.force_login(self.student)
         resp = self.client.get(reverse("selection:user_timetable", args=[friend.id]))
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "林宇翔 的課表")
@@ -294,12 +295,13 @@ class PersonalTimetableTests(TestCase):
         pass
         school_staff = User.objects.create_user(
             username="school_staff",
+            email="school-staff@example.com",
             password="staff_password",
             role=User.Role.SCHOOL,
             is_staff=True,
         )
         admin_user = User.objects.create_user(
-            username="super_admin",
+            username="admin",
             password="admin_password",
             role=User.Role.ADMIN,
             is_staff=True,
@@ -307,12 +309,14 @@ class PersonalTimetableTests(TestCase):
         )
 
 
-        self.client.login(username="school_staff", password="staff_password")
-        resp_school = self.client.get(reverse("courses:home"))
+        school_client = Client()
+        school_client.force_login(school_staff)
+        self.client.cookies["mid_school_session"] = school_client.cookies["mid_student_session"].value
+        resp_school = self.client.get(reverse("school:dashboard"))
         self.assertEqual(resp_school.status_code, 200)
         self.assertContains(resp_school, "學校端（教務處）管理中心")
 
-        resp_class_tt = self.client.get(reverse("courses:class_timetables"))
+        resp_class_tt = self.client.get(reverse("school:classes"))
         self.assertEqual(resp_class_tt.status_code, 200)
 
 
@@ -320,17 +324,14 @@ class PersonalTimetableTests(TestCase):
         self.assertNotEqual(resp_manage.status_code, 200)
 
 
-        self.client.login(username="super_admin", password="admin_password")
-        resp_admin = self.client.get(reverse("courses:home"))
-        self.assertEqual(resp_admin.status_code, 302)
-        self.assertEqual(resp_admin.url, reverse("selection:console_dashboard"))
-        self.assertEqual(self.client.get(resp_admin.url).status_code, 200)
-
+        admin_client = Client()
+        admin_client.force_login(admin_user)
+        self.client.cookies["mid_admin_session"] = admin_client.cookies["mid_student_session"].value
         resp_admin_backend = self.client.get(reverse("admin:index"))
         self.assertEqual(resp_admin_backend.status_code, 200)
 
 
-        self.client.login(username="test_student", password="password123")
+        self.client.force_login(self.student)
         resp_student_blocked = self.client.get(reverse("accounts:manage_roles"))
         self.assertNotEqual(resp_student_blocked.status_code, 200)
 

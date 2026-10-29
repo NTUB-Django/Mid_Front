@@ -11,6 +11,7 @@ class User(AbstractUser):
 
     role = models.CharField("角色", max_length=20, choices=Role.choices, default=Role.STUDENT)
     display_name = models.CharField("顯示名稱", max_length=60, blank=True)
+    email_verified_at = models.DateTimeField("Email 驗證時間", null=True, blank=True)
     timetable_public = models.BooleanField("公開給所有登入學生", default=False)
     share_with_classmates = models.BooleanField("分享給同班同學", default=True)
     share_with_friends = models.BooleanField("分享給好友", default=False)
@@ -101,3 +102,43 @@ class GroupMembership(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["group", "user"], name="unique_group_member")]
+
+
+class GroupEvent(models.Model):
+    group = models.ForeignKey(SharingGroup, on_delete=models.CASCADE, related_name="events")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_group_events")
+    title = models.CharField(max_length=100)
+    starts_at = models.DateTimeField()
+    ends_at = models.DateTimeField()
+    location = models.CharField(max_length=100, blank=True)
+    note = models.TextField(blank=True)
+    color = models.CharField(max_length=12, default="blue")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["starts_at", "pk"]
+
+
+class GroupTask(models.Model):
+    group = models.ForeignKey(SharingGroup, on_delete=models.CASCADE, related_name="tasks")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_group_tasks")
+    title = models.CharField(max_length=160)
+    due_at = models.DateTimeField(null=True, blank=True)
+    completed = models.BooleanField(default=False)
+    completed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="completed_group_tasks")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["completed", "due_at", "created_at"]
+
+
+class GroupMemo(models.Model):
+    group = models.ForeignKey(SharingGroup, on_delete=models.CASCADE, related_name="memos")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_group_memos")
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="updated_group_memos")
+    title = models.CharField(max_length=100)
+    body = models.TextField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at", "-pk"]

@@ -1,11 +1,20 @@
-from django.contrib.auth import views as auth_views
 from django.urls import path
 
-from . import social_views, views
+from . import group_views, social_views, views
 
 app_name = "accounts"
 
 urlpatterns = [
+    path("groups/<int:pk>/", group_views.workspace, name="group_workspace"),
+    path("groups/<int:pk>/events/create/", group_views.event_create, name="group_event_create"),
+    path("groups/<int:pk>/events/<int:item_id>/edit/", group_views.event_edit, name="group_event_edit"),
+    path("groups/<int:pk>/events/<int:item_id>/delete/", group_views.event_delete, name="group_event_delete"),
+    path("groups/<int:pk>/tasks/create/", group_views.task_create, name="group_task_create"),
+    path("groups/<int:pk>/tasks/<int:item_id>/toggle/", group_views.task_toggle, name="group_task_toggle"),
+    path("groups/<int:pk>/tasks/<int:item_id>/delete/", group_views.task_delete, name="group_task_delete"),
+    path("groups/<int:pk>/memos/create/", group_views.memo_create, name="group_memo_create"),
+    path("groups/<int:pk>/memos/<int:item_id>/edit/", group_views.memo_edit, name="group_memo_edit"),
+    path("groups/<int:pk>/memos/<int:item_id>/delete/", group_views.memo_delete, name="group_memo_delete"),
     path("connections/", social_views.connections, name="connections"),
     path("privacy/", social_views.privacy, name="privacy"),
     path("friends/request/", social_views.friend_request, name="friend_request"),
@@ -19,9 +28,8 @@ urlpatterns = [
         views.StudentLoginView.as_view(),
         name="login",
     ),
-    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("logout/", views.StudentLogoutView.as_view(), name="logout"),
     path("register/", views.register, name="register"),
     path("profile/", views.profile, name="profile"),
     path("roles/", views.manage_roles, name="manage_roles"),
-    path("switch-role/<str:role>/", views.switch_role, name="switch_role"),
 ]

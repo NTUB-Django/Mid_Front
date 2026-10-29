@@ -1,10 +1,16 @@
 from django.urls import path
 
-from . import views
+from . import import_views, views
 
 app_name = "selection"
 
 urlpatterns = [
+    path("import/excel/", import_views.excel_import, name="excel_import"),
+    path("import/excel/confirm/", import_views.excel_confirm, name="excel_confirm"),
+    path("import/excel/template/", import_views.excel_template, name="excel_template"),
+    path("import/<int:pk>/undo/", import_views.undo_import, name="undo_import"),
+    path("courses/clear/", import_views.clear_courses, name="clear_courses"),
+    path("courses/clear-imported/", import_views.clear_imported, name="clear_imported"),
 
     path("timetable/", views.timetable, name="timetable"),
     path("timetable/student/<int:user_id>/", views.user_timetable, name="user_timetable"),

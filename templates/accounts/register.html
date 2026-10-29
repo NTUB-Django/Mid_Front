@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}建立學生帳號｜NTUB Django{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/signin.css' %}?v=20261029e">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/signin.css' %}?v=20261029f">{% endblock %}
 {% block page_layout %}
 <div class="signin-page">
 <header class="signin-header"><a class="signin-brand" href="{% url 'courses:home' %}"><img src="{% static 'img/timetable-icon.svg' %}" alt="" width="32" height="32">NTUB Django</a><a href="{% url 'courses:home' %}">回首頁</a></header>
 <main id="main-content" class="signin-main" tabindex="-1">
 <section class="signin-form-panel" aria-labelledby="register-title">
-<h1 id="register-title">建立學生帳號</h1><p class="signin-intro">使用學號建立帳號，之後可用學號或 Email 搭配密碼登入。</p>
-{% if form.non_field_errors %}<div class="signin-notice" role="alert">{{ form.non_field_errors }}</div>{% endif %}
-<form method="post" class="signin-form">{% csrf_token %}
+<h1 id="register-title">建立學生帳號</h1><p class="signin-intro">使用學號與 Email 建立帳號，之後以 Email 搭配密碼登入。</p>
+{% if form.non_field_errors %}<div class="signin-notice" role="alert" data-register-error>{{ form.non_field_errors }}</div>{% endif %}
+<form method="post" class="signin-form" id="register-form">{% csrf_token %}<input type="hidden" name="register_token" value="{{ register_token }}">
 <div class="signin-register-identifiers">
 <div class="signin-field"><label for="id_username">學號 *</label>{{ form.username }}{% for error in form.username.errors %}<p class="signin-error" role="alert">{{ error }}</p>{% endfor %}</div>
 <div class="signin-field"><label for="id_email">Email *</label>{{ form.email }}{% for error in form.email.errors %}<p class="signin-error" role="alert">{{ error }}</p>{% endfor %}</div>
@@ -23,4 +23,6 @@
 </section>
 </main><footer class="signin-footer">NTUB Django · 課表與選課</footer>
 </div>
+<dialog class="signin-error-dialog" id="register-status-dialog" aria-labelledby="register-status-title"><h2 id="register-status-title">帳號建立中</h2><p id="register-status-message">正在建立帳號並登入，請勿重複送出。</p><button type="button" class="signin-submit" id="register-status-close" hidden>返回表單</button></dialog>
+<script src="{% static 'js/register-submit.js' %}?v=20261029a" defer></script>
 {% endblock %}

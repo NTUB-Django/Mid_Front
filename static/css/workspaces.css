@@ -90,6 +90,7 @@ body.is-school-view .topbar .btn-ghost{color:#e4ecf5}
 .site-landing .landing-navigation{gap:28px}
 .site-landing .landing-navigation>a{font-size:14px;color:#53657b}
 .site-landing .site-button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:12px 20px;border-radius:5px;background:#3264f4;color:#fff;font-size:14px;font-weight:700;box-sizing:border-box}
+.site-landing .landing-navigation a.site-button,.site-landing .landing-navigation a.site-button:is(:hover,:focus,:active){color:#fff;-webkit-text-fill-color:#fff}
 .site-intro{background:#3264f4;color:#fff}
 .site-intro-inner{width:min(1240px,100%);margin:auto;padding:64px 32px;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);align-items:center;gap:60px}
 .site-copy>p:first-child{font-size:13px;color:#e2eaff;margin:0 0 24px}

@@ -4,6 +4,7 @@ from django import forms
 from courses.models import Department, EduType, OfferingSlot, StudentClass
 
 from .models import COLOR_CHOICES, CustomSchedule, Selection
+from accounts.social import member_groups
 
 
 STANDARD_PERIOD_TIMES = [
@@ -24,6 +25,7 @@ STANDARD_PERIOD_TIMES = [
 
 
 class CustomScheduleForm(forms.ModelForm):
+    visibility = forms.ChoiceField(label="行程可見範圍", choices=CustomSchedule.Visibility.choices, required=False, widget=forms.Select(attrs={"class": "input"}))
     start = forms.TimeField(
         label="開始時間",
         widget=forms.TimeInput(attrs={"type": "time", "class": "input"}),
@@ -35,7 +37,7 @@ class CustomScheduleForm(forms.ModelForm):
 
     class Meta:
         model = CustomSchedule
-        fields = ["title", "weekday", "period", "start", "end", "location", "color", "note"]
+        fields = ["title", "weekday", "period", "start", "end", "location", "color", "note", "visibility", "shared_groups"]
         widgets = {
             "title": forms.TextInput(attrs={"class": "input", "placeholder": "例如：系學會開會、兼職打工、自習"}),
             "weekday": forms.Select(attrs={"class": "input"}),
@@ -43,7 +45,15 @@ class CustomScheduleForm(forms.ModelForm):
             "location": forms.TextInput(attrs={"class": "input", "placeholder": "例如：圖書館 2F、外社辦、六館 302"}),
             "color": forms.Select(attrs={"class": "input"}),
             "note": forms.Textarea(attrs={"class": "input", "rows": 3, "placeholder": "備註事項或說明..."}),
+            "shared_groups": forms.CheckboxSelectMultiple(),
         }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["shared_groups"].queryset = member_groups(user) if user else self.fields["shared_groups"].queryset.none()
+
+    def clean_visibility(self):
+        return self.cleaned_data.get("visibility") or CustomSchedule.Visibility.INHERIT
 
     def clean(self):
         cleaned_data = super().clean()
@@ -51,6 +61,8 @@ class CustomScheduleForm(forms.ModelForm):
         end = cleaned_data.get("end")
         if start and end and start >= end:
             raise forms.ValidationError("結束時間必須晚於開始時間！")
+        if cleaned_data.get("visibility") == CustomSchedule.Visibility.GROUPS and not cleaned_data.get("shared_groups"):
+            self.add_error("shared_groups", "請選擇至少一個已加入的群組。")
         return cleaned_data
 
 

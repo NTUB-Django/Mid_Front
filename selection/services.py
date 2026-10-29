@@ -9,7 +9,8 @@ from django.utils import timezone
 
 from courses.models import Offering, OfferingSlot
 
-from .models import CustomSchedule, Selection
+from .models import CustomSchedule, ImportBatch, Selection
+from .privacy import visible_schedules
 
 
 STANDARD_PERIODS = [
@@ -127,6 +128,7 @@ def import_class_timetable(user, student_class):
     added = 0
     skipped = 0
     conflicts = []
+    batch = ImportBatch.objects.create(user=user, source="class", label=student_class.full_name)
 
     for off in offerings:
         if Selection.objects.filter(user=user, offering=off).exists():
@@ -136,13 +138,15 @@ def import_class_timetable(user, student_class):
         if c:
             conflicts.append(f"{off.display_name}（{c[0]}）")
             continue
-        Selection.objects.create(user=user, offering=off, status=Selection.Status.SELECTED)
+        Selection.objects.create(user=user, offering=off, status=Selection.Status.SELECTED, import_batch=batch)
         added += 1
 
+    if not added:
+        batch.delete()
     return {"added": added, "skipped": skipped, "conflicts": conflicts}
 
 
-def build_personal_timetable(user, full_grid=True):
+def build_personal_timetable(user, full_grid=True, viewer=None):
 
     selections = (
         user.selections.filter(status=Selection.Status.SELECTED)
@@ -150,7 +154,7 @@ def build_personal_timetable(user, full_grid=True):
         .prefetch_related("offering__slots")
     )
 
-    customs = user.custom_schedules.all()
+    customs = visible_schedules(user, viewer)
 
     items = []
 
@@ -183,11 +187,14 @@ def build_personal_timetable(user, full_grid=True):
                 "id": c.id,
                 "offering_id": None,
                 "name": c.title,
-                "code": "自訂行程",
+                "code": "Excel 課程" if c.import_source == "excel" else "自訂行程",
                 "serial": "",
                 "teacher": "",
                 "room": c.location,
                 "color": c.color or "blue",
+                "color_hex": c.palette["hex"],
+                "color_wash": c.palette["wash"],
+                "is_imported": c.import_source == "excel",
                 "notes": c.note,
                 "weekday": c.weekday,
                 "period": c.period or f"{c.start:%H:%M}–{c.end:%H:%M}",
@@ -237,16 +244,16 @@ def build_personal_timetable(user, full_grid=True):
     }
 
 
-def get_timetable_stats(user):
+def get_timetable_stats(user, viewer=None):
     selections = (
         user.selections.filter(status=Selection.Status.SELECTED)
         .select_related("offering", "offering__course")
         .prefetch_related("offering__slots")
     )
-    customs = user.custom_schedules.all()
+    customs = visible_schedules(user, viewer)
 
-    total_course_count = selections.count()
-    total_custom_count = customs.count()
+    total_course_count = selections.count() + customs.filter(import_source="excel").values("title").distinct().count()
+    total_custom_count = customs.filter(import_source="personal").count()
 
     total_periods = 0
     weekday_counts = {i: 0 for i in range(1, 8)}

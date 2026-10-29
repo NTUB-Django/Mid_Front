@@ -3,10 +3,12 @@
   <div class="workspace-profile"><span class="workspace-avatar" aria-hidden="true">{{ user.display_name|default:user.username|first }}</span><strong>{{ user.display_name|default:user.username }}</strong><span>{% if user.is_school_role %}教務工作區{% else %}我的學習空間{% endif %}</span></div>
   <nav class="workspace-links" aria-label="工作區導覽">
     {% if user.is_school_role %}
-    <a href="{% url 'courses:home' %}" {% if active_tab == 'dashboard' %}aria-current="page"{% endif %}><span aria-hidden="true">▦</span>教務總覽</a>
-    <a href="{% url 'courses:class_timetables' %}" {% if active_tab == 'class_timetables' %}aria-current="page"{% endif %}><span aria-hidden="true">▤</span>班級課表</a>
-    <a href="{% url 'selection:console_offerings' %}"><span aria-hidden="true">☷</span>開課與名額</a>
-    <a href="{% url 'courses:browse' %}" {% if active_tab == 'browse' %}aria-current="page"{% endif %}><span aria-hidden="true">⌕</span>課程資料</a>
+    <a href="{% url 'school:dashboard' %}" {% if active_tab == 'dashboard' %}aria-current="page"{% endif %}><span aria-hidden="true">▦</span>教務總覽</a>
+    <a href="{% url 'school:classes' %}" {% if active_tab == 'class_timetables' %}aria-current="page"{% endif %}><span aria-hidden="true">▤</span>班級課表</a>
+    <a href="{% url 'school:offerings' %}"><span aria-hidden="true">☷</span>開課與名額</a>
+    <a href="{% url 'school:browse' %}" {% if active_tab == 'browse' %}aria-current="page"{% endif %}><span aria-hidden="true">⌕</span>課程資料</a>
+    <a href="{% url 'school:student_import' %}" {% if active_tab == 'student_import' %}aria-current="page"{% endif %}><span aria-hidden="true">⇧</span>匯入學生</a>
+    <a href="{% url 'school:profile' %}" {% if active_tab == 'profile' %}aria-current="page"{% endif %}><span aria-hidden="true">○</span>我的帳號</a>
     {% else %}
     <a href="{% url 'courses:home' %}" {% if active_tab == 'home' %}aria-current="page"{% endif %}><span aria-hidden="true">▦</span>今日總覽</a>
     <a href="{% url 'selection:timetable' %}" {% if active_tab == 'timetable' %}aria-current="page"{% endif %}><span aria-hidden="true">▤</span>我的課表</a>

@@ -24,6 +24,7 @@ def health_check(request):
 urlpatterns = [
     path('healthz/', health_check, name='health_check'),
     path('admin/', admin.site.urls),
+    path('school/', include('courses.school_urls')),
     path('sw.js', never_cache(TemplateView.as_view(template_name='sw.js', content_type='application/javascript')), name='service_worker'),
     path('manifest.json', never_cache(TemplateView.as_view(template_name='manifest.json', content_type='application/manifest+json')), name='pwa_manifest'),
     path('accounts/', include('accounts.urls')),

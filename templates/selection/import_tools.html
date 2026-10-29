@@ -1,0 +1,9 @@
+<section class="panel" id="import-tools">
+  <h2 class="panel-title">Excel 匯入與課程清理</h2>
+  <p class="panel-sub">學校選完課後，可上傳匯出的 Excel，預覽後加入個人課表。</p>
+  <a class="btn btn-primary" href="{% url 'selection:excel_import' %}">從 Excel 匯入課表</a>
+  <div class="import-cleanup-actions"><form method="post" action="{% url 'selection:clear_imported' %}" onsubmit="return confirm('確定批次刪除所有已記錄的匯入課程？手動加入的課程與個人行程會保留。');">{% csrf_token %}<button type="submit" class="btn btn-danger">批次刪除匯入課程</button></form><span>只刪除系統有匯入紀錄的班級與 Excel 課程；手動加入的課程保留。</span></div>
+  <details style="margin-top:20px"><summary>清空所有已加入課程（包含手動加入）</summary><p>將移除所有已加入課程（包含手動加入）及 {{ imported_course_count }} 個 Excel 時段，保留自己新增的個人行程與預選資料。若只想移除某次匯入，請使用下方的「撤銷本次匯入」。</p><form method="post" action="{% url 'selection:clear_courses' %}" onsubmit="return confirm('確定清空所有已加入課程與 Excel 時段？手動加入的課程也會移除，個人行程及預選資料保留。');">{% csrf_token %}<button type="submit" class="btn btn-danger">一鍵清空全部已加入課程</button></form></details>
+  <h3 style="margin-top:24px">最近匯入紀錄</h3>
+  {% for batch in import_batches %}<div class="course-row course-row-has-action"><div class="course-row-main"><strong>{{ batch.label }}</strong><span class="course-meta">{{ batch.get_source_display }} · {{ batch.created_at|date:"Y/m/d H:i" }} · {{ batch.selections.count }} 門課／{{ batch.schedules.count }} 個 Excel 時段</span></div><form method="post" action="{% url 'selection:undo_import' batch.pk %}" onsubmit="return confirm('確定撤銷這次匯入？會移除這批新增的課程與 Excel 時段，包含匯入後曾編輯的項目，其他資料保留。');">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline">撤銷本次匯入</button></form></div>{% empty %}<p class="empty-hint">更新後的新匯入會記錄在這裡；舊有課程可使用上方清空功能。</p>{% endfor %}
+</section>

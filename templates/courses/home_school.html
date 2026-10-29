@@ -3,9 +3,9 @@
 {% block title %}學校端（教務處）管理中心 · NTUB 個人課表系統{% endblock %}
 {% block content %}
 
-<header class="workspace-page-head"><div><p>教務管理</p><h1>教務工作總覽</h1><span>全校 {{ total_dept }} 系所 · {{ total_edu }} 學制</span></div><a class="btn btn-primary" href="{% url 'selection:console_offerings' %}">管理開課與名額</a></header>
-<section class="workspace-metrics workspace-metrics-four" aria-label="教務統計"><article><span>全校班級</span><strong>{{ total_classes }}<small>班</small></strong><a href="{% url 'courses:class_timetables' %}">查看班級課表 →</a></article><article><span>本學期開課</span><strong>{{ total_offering }}<small>門</small></strong><a href="{% url 'courses:browse' %}">查看開課資料 →</a></article><article><span>已排課人次</span><strong>{{ total_selected }}</strong><span>目前有效選課</span></article><article><span>註冊學生</span><strong>{{ total_student }}<small>人</small></strong><span>學生帳號總數</span></article></section>
-<nav class="workspace-school-tabs" aria-label="教務作業"><a href="{% url 'courses:home' %}" aria-current="page">選課總覽</a><a href="{% url 'courses:class_timetables' %}">班級課表</a><a href="{% url 'selection:console_offerings' %}">開課名額</a><a href="{% url 'courses:browse' %}">課程查詢</a></nav>
+<header class="workspace-page-head"><div><p>教務管理</p><h1>教務工作總覽</h1><span>全校 {{ total_dept }} 系所 · {{ total_edu }} 學制</span></div><a class="btn btn-primary" href="{% url 'school:offerings' %}">管理開課與名額</a></header>
+<section class="workspace-metrics workspace-metrics-four" aria-label="教務統計"><article><span>全校班級</span><strong>{{ total_classes }}<small>班</small></strong><a href="{% url 'school:classes' %}">查看班級課表 →</a></article><article><span>本學期開課</span><strong>{{ total_offering }}<small>門</small></strong><a href="{% url 'school:browse' %}">查看開課資料 →</a></article><article><span>已排課人次</span><strong>{{ total_selected }}</strong><span>目前有效選課</span></article><article><span>註冊學生</span><strong>{{ total_student }}<small>人</small></strong><span>學生帳號總數</span></article></section>
+<nav class="workspace-school-tabs" aria-label="教務作業"><a href="{% url 'school:dashboard' %}" aria-current="page">選課總覽</a><a href="{% url 'school:classes' %}">班級課表</a><a href="{% url 'school:offerings' %}">開課名額</a><a href="{% url 'school:browse' %}">課程查詢</a></nav>
 <div class="workspace-school-table">
   <section class="panel">
     <div class="panel-head-flex">
@@ -13,7 +13,7 @@
         <h2 class="panel-title">熱門排定課程 Top 10</h2>
         <span class="panel-sub-label">依學生排入人次排序</span>
       </div>
-      <a class="btn btn-sm btn-outline" href="{% url 'selection:console_offerings' %}">名額管理</a>
+      <a class="btn btn-sm btn-outline" href="{% url 'school:offerings' %}">名額管理</a>
     </div>
     <div class="table-scroll">
       <table class="data-table">
@@ -30,13 +30,13 @@
         <tbody>
           {% for o in hot_offerings %}
             <tr>
-              <td><strong><a href="{% url 'courses:offering_detail' o.id %}">{{ o.course.name }}</a></strong></td>
+              <td><strong><a href="{% url 'school:offering_detail' o.id %}">{{ o.course.name }}</a></strong></td>
               <td>{{ o.course.code }} - {{ o.serial }}</td>
               <td>{{ o.teacher|default:"待定" }}</td>
               <td><span class="badge badge-selected">{{ o.selected_n }} 人</span></td>
               <td>{{ o.capacity }} 人</td>
               <td>
-                <a class="btn btn-sm btn-outline" href="{% url 'courses:offering_roster' o.id %}">名冊</a>
+                <a class="btn btn-sm btn-outline" href="{% url 'school:offering_roster' o.id %}">名冊</a>
               </td>
             </tr>
           {% empty %}

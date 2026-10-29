@@ -2,7 +2,7 @@
 {% load course_tags %}
 {% block title %}{{ offering.course.name }} · NTUB 個人課表系統{% endblock %}
 {% block content %}
-<p class="breadcrumb"><a href="{% url 'courses:browse' %}">課程查詢</a> / {{ offering.course.code }}</p>
+<p class="breadcrumb"><a href="{% if user.is_school_role %}{% url 'school:browse' %}{% else %}{% url 'courses:browse' %}{% endif %}">課程查詢</a> / {{ offering.course.code }}</p>
 
 <div class="page-head page-head-flex">
   <div>

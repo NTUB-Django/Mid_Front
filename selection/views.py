@@ -14,7 +14,7 @@ from accounts.social import can_view_timetable, friend_ids, people_rows
 from courses.models import Department, EduType, Offering, StudentClass
 
 from .forms import CustomScheduleForm, ImportClassScheduleForm, SelectionPreferenceForm
-from .models import CustomSchedule, Selection
+from .models import CustomSchedule, EVENT_COLORS, Selection
 from .services import (
     add_course_to_timetable,
     build_personal_timetable,
@@ -47,6 +47,9 @@ def _mobile_timetable_data(timetable_data, today_weekday=None):
                     "teacher": item["teacher"] or "",
                     "notes": item["notes"] or "",
                     "color": item["color"],
+                    "colorHex": item.get("color_hex"),
+                    "colorWash": item.get("color_wash"),
+                    "isImported": item.get("is_imported", False),
                     "isCustom": item["is_custom"],
                     "customId": item["id"] if item["is_custom"] else None,
                     "url": None if item["is_custom"] else reverse(
@@ -83,7 +86,7 @@ def _render_timetable(request, custom_form=None, editing_schedule=None, status=2
     custom_schedules = request.user.custom_schedules.all().order_by("weekday", "start")
 
     if custom_form is None:
-        custom_form = CustomScheduleForm(initial={"weekday": timezone.localdate().isoweekday(), "start": "09:00", "end": "10:00"})
+        custom_form = CustomScheduleForm(user=request.user, initial={"weekday": timezone.localdate().isoweekday(), "start": "09:00", "end": "10:00", "visibility": "inherit"})
     import_form = ImportClassScheduleForm(
         initial={"student_class": request.user.student_class} if request.user.student_class else None
     )
@@ -109,6 +112,9 @@ def _render_timetable(request, custom_form=None, editing_schedule=None, status=2
         "enrolled_courses": enrolled_courses,
         "custom_schedules": custom_schedules,
         "custom_form": custom_form,
+        "event_palette": EVENT_COLORS,
+        "import_batches": request.user.import_batches.prefetch_related("selections", "schedules")[:20],
+        "imported_course_count": request.user.custom_schedules.filter(import_source="excel").count(),
         "can_edit_schedule": True,
         "editor_open": custom_form.is_bound,
         "editing_schedule": editing_schedule,
@@ -118,6 +124,7 @@ def _render_timetable(request, custom_form=None, editing_schedule=None, status=2
              "period": item.period, "start": item.start.strftime("%H:%M"),
              "end": item.end.strftime("%H:%M"), "location": item.location,
              "color": item.color, "note": item.note,
+             "visibility": item.visibility, "sharedGroups": list(item.shared_groups.values_list("pk", flat=True)),
              "updateUrl": reverse("selection:custom_schedule_update", args=[item.pk]),
              "deleteUrl": reverse("selection:custom_schedule_delete", args=[item.pk])}
             for item in custom_schedules
@@ -143,8 +150,8 @@ def user_timetable(request, user_id):
     target_user = get_object_or_404(User, pk=user_id, role=User.Role.STUDENT)
     if not can_view_timetable(request.user, target_user):
         raise PermissionDenied("對方尚未開放課表給你查看。")
-    timetable_data = build_personal_timetable(target_user, full_grid=True)
-    stats = get_timetable_stats(target_user)
+    timetable_data = build_personal_timetable(target_user, full_grid=True, viewer=request.user)
+    stats = get_timetable_stats(target_user, viewer=request.user)
     enrolled_courses = (
         target_user.selections.filter(status=Selection.Status.SELECTED)
         .select_related("offering", "offering__course")
@@ -223,7 +230,7 @@ def custom_schedule_update(request, pk):
 
 
 def _save_custom_schedule(request, instance=None):
-    form = CustomScheduleForm(request.POST, instance=instance)
+    form = CustomScheduleForm(request.POST, instance=instance, user=request.user)
     if not form.is_valid():
         return _render_timetable(request, custom_form=form, editing_schedule=instance, status=400)
     conflicts = check_custom_conflict(
@@ -235,6 +242,7 @@ def _save_custom_schedule(request, instance=None):
     item = form.save(commit=False)
     item.user = request.user
     item.save()
+    form.save_m2m()
     messages.success(request, f"已{'更新' if instance else '新增'}個人行程「{item.title}」")
     return redirect("selection:timetable")
 
@@ -270,7 +278,8 @@ def import_class(request):
         if result["conflicts"]:
             msg_parts.append(f"因衝堂未加入 {len(result['conflicts'])} 門：{'；'.join(result['conflicts'])}")
 
-        messages.info(request, "，".join(msg_parts), extra_tags="schedule-conflict schedule-import" if result["conflicts"] else "")
+        notifier = messages.info if result["conflicts"] else messages.success
+        notifier(request, "，".join(msg_parts), extra_tags="schedule-conflict schedule-import" if result["conflicts"] else "")
     return redirect("selection:timetable")
 
 
@@ -321,29 +330,8 @@ def pre_remove(request, pk):
 
 
 
-@login_required
-@admin_role_required
 def console_dashboard(request):
-    total_pre = Selection.objects.filter(status=Selection.Status.PRE).count()
-    total_selected = Selection.objects.filter(status=Selection.Status.SELECTED).count()
-    context = {
-        "active_tab": "console",
-        "total_offering": Offering.objects.count(),
-        "total_student": request.user.__class__.objects.filter(role="student").count(),
-        "total_selected": total_selected,
-        "total_pre": total_pre,
-        "no_allocation": total_selected == 0 and total_pre > 0,
-        "total_customs": CustomSchedule.objects.count(),
-        "hot_offerings": (
-            Offering.objects.annotate(
-                selected_n=models.Count("selections", filter=models.Q(selections__status=Selection.Status.SELECTED)),
-                pre_n=models.Count("selections", filter=models.Q(selections__status=Selection.Status.PRE)),
-            )
-            .select_related("course")
-            .order_by("-pre_n")[:10]
-        ),
-    }
-    return render(request, "selection/console_dashboard.html", context)
+    return redirect("admin:index")
 
 
 @login_required
@@ -396,5 +384,5 @@ def console_run_allocation(request):
 def console_reset_allocation(request):
     if request.method == "POST":
         n = reset_allocation()
-        messages.info(request, f"已重置 {n} 筆選課紀錄回「預選中」")
+        messages.success(request, f"已重置 {n} 筆選課紀錄回「預選中」")
     return redirect("selection:console_dashboard")

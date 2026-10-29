@@ -1,6 +1,4 @@
 from django.contrib.auth.backends import ModelBackend
-from django.db.models import Q
-
 from .models import User
 
 
@@ -9,7 +7,10 @@ class UsernameOrEmailBackend(ModelBackend):
         identifier = (username or kwargs.get(User.USERNAME_FIELD) or "").strip()
         if not identifier or password is None:
             return None
-        candidates = list(User.objects.filter(Q(username=identifier) | Q(email__iexact=identifier))[:2])
+        if identifier == "admin":
+            candidates = list(User.objects.filter(username="admin", role=User.Role.ADMIN, is_superuser=True)[:2])
+        else:
+            candidates = list(User.objects.filter(email__iexact=identifier).exclude(email="")[:2])
         if len(candidates) != 1:
             User().set_password(password)
             return None

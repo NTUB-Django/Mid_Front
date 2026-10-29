@@ -22,16 +22,17 @@
 <link rel="stylesheet" href="{% static 'css/app.css' %}?v=20261017a">
 {% block extra_css %}{% endblock %}
 <link rel="stylesheet" href="{% static 'css/design-system.css' %}?v=20261018d">
-<link rel="stylesheet" href="{% static 'css/workspaces.css' %}?v=20261018c">
+<link rel="stylesheet" href="{% static 'css/workspaces.css' %}?v=20261029g">
 {% block page_css %}{% endblock %}
 <link rel="stylesheet" href="{% static 'css/conflict-dialog.css' %}?v=20261029c">
+<link rel="stylesheet" href="{% static 'css/operation-dialog.css' %}?v=20261029a">
 </head>
 <body class="{% if not user.is_authenticated %}is-anonymous{% elif user.is_school_role %}is-school-view{% else %}is-student-view{% endif %}">
 <a class="skip-link" href="#main-content">跳至主內容</a>
 {% block page_layout %}
 <header class="topbar">
   <div class="container topbar-inner">
-    <a class="brand" href="{% url 'courses:home' %}" aria-label="NTUB個人課表系統首頁">
+    <a class="brand" href="{% if user.is_school_role %}{% url 'school:dashboard' %}{% else %}{% url 'courses:home' %}{% endif %}" aria-label="NTUB個人課表系統首頁">
       <img src="{% static 'img/timetable-icon.svg' %}" alt="" class="workspace-brand-icon" width="30" height="30">
       <span>NTUB Django</span>
     </a>
@@ -39,10 +40,10 @@
     <nav id="main-navigation" class="main-nav" aria-label="主要導覽">
       {% if user.is_authenticated %}
         {% if user.is_school_role %}
-          <a class="nav-link {% if active_tab == 'dashboard' %}is-active{% endif %}"{% if active_tab == 'dashboard' %} aria-current="page"{% endif %} href="{% url 'courses:home' %}">學校端中心</a>
-          <a class="nav-link {% if active_tab == 'class_timetables' %}is-active{% endif %}"{% if active_tab == 'class_timetables' %} aria-current="page"{% endif %} href="{% url 'courses:class_timetables' %}">全校班級課表</a>
-          <a class="nav-link" href="{% url 'selection:console_offerings' %}">開課名額管理</a>
-          <a class="nav-link {% if active_tab == 'browse' %}is-active{% endif %}"{% if active_tab == 'browse' %} aria-current="page"{% endif %} href="{% url 'courses:browse' %}">全校課程清單</a>
+          <a class="nav-link {% if active_tab == 'dashboard' %}is-active{% endif %}"{% if active_tab == 'dashboard' %} aria-current="page"{% endif %} href="{% url 'school:dashboard' %}">學校端中心</a>
+          <a class="nav-link {% if active_tab == 'class_timetables' %}is-active{% endif %}"{% if active_tab == 'class_timetables' %} aria-current="page"{% endif %} href="{% url 'school:classes' %}">全校班級課表</a>
+          <a class="nav-link" href="{% url 'school:offerings' %}">開課名額管理</a>
+          <a class="nav-link {% if active_tab == 'browse' %}is-active{% endif %}"{% if active_tab == 'browse' %} aria-current="page"{% endif %} href="{% url 'school:browse' %}">全校課程清單</a>
         {% else %}
           <a class="nav-link {% if active_tab == 'home' %}is-active{% endif %}"{% if active_tab == 'home' %} aria-current="page"{% endif %} href="{% url 'courses:home' %}">首頁</a>
           <a class="nav-link {% if active_tab == 'timetable' %}is-active{% endif %}"{% if active_tab == 'timetable' %} aria-current="page"{% endif %} href="{% url 'selection:timetable' %}">個人課表</a>
@@ -52,7 +53,7 @@
 
         {% if user.is_student_role %}<a class="nav-link {% if active_tab == 'connections' %}is-active{% endif %}" href="{% url 'accounts:connections' %}">好友與群組</a>{% endif %}
         <div class="navigation-account"><span>{{ user.display_name|default:user.username }}</span><small>{% if user.is_school_role %}教務／行政{% else %}學生{% endif %}</small></div>
-        <form class="inline-form" method="post" action="{% url 'accounts:logout' %}">
+        <form class="inline-form" method="post" action="{% if user.is_school_role %}{% url 'school:logout' %}{% else %}{% url 'accounts:logout' %}{% endif %}">
           {% csrf_token %}
           <button class="navigation-logout" type="submit">登出</button>
         </form>
@@ -69,7 +70,7 @@
   {% if messages %}
     <div class="messages">
       {% for message in messages %}
-        <div class="alert alert-{{ message.level_tag }}"{% if 'schedule-conflict' in message.tags %} data-schedule-conflict data-conflict-kind="{% if 'schedule-blocked' in message.tags %}blocked{% elif 'schedule-saved' in message.tags %}saved{% else %}import{% endif %}"{% endif %}>{{ message }}</div>
+        <div class="alert alert-{{ message.level_tag }}"{% if message.level_tag == 'success' and 'schedule-conflict' not in message.tags %} data-operation-success{% endif %}{% if 'schedule-conflict' in message.tags %} data-schedule-conflict data-conflict-kind="{% if 'schedule-blocked' in message.tags %}blocked{% elif 'schedule-saved' in message.tags %}saved{% else %}import{% endif %}"{% endif %}>{{ message }}</div>
       {% endfor %}
     </div>
   {% endif %}
@@ -85,6 +86,7 @@
 
 
 {% if user.is_authenticated %}
+<script src="{% static 'js/auth-state.js' %}?v=20261029a" defer></script>
 <nav class="ios-mobile-tabbar" aria-label="手機快捷導覽列">
   {% if user.is_student_role %}
 
@@ -129,7 +131,7 @@
 
   {% else %}
 
-    <a href="{% url 'courses:home' %}" class="ios-tab-item {% if active_tab == 'dashboard' %}is-active{% endif %}"{% if active_tab == 'dashboard' %} aria-current="page"{% endif %}>
+    <a href="{% url 'school:dashboard' %}" class="ios-tab-item {% if active_tab == 'dashboard' %}is-active{% endif %}"{% if active_tab == 'dashboard' %} aria-current="page"{% endif %}>
       <svg class="ios-tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="7" height="9" rx="1"></rect>
         <rect x="14" y="3" width="7" height="5" rx="1"></rect>
@@ -138,7 +140,7 @@
       </svg>
       <span>教務中心</span>
     </a>
-    <a href="{% url 'courses:class_timetables' %}" class="ios-tab-item {% if active_tab == 'class_timetables' %}is-active{% endif %}"{% if active_tab == 'class_timetables' %} aria-current="page"{% endif %}>
+    <a href="{% url 'school:classes' %}" class="ios-tab-item {% if active_tab == 'class_timetables' %}is-active{% endif %}"{% if active_tab == 'class_timetables' %} aria-current="page"{% endif %}>
       <svg class="ios-tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
         <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
@@ -147,7 +149,7 @@
       </svg>
       <span>班級課表</span>
     </a>
-    <a href="{% url 'selection:console_offerings' %}" class="ios-tab-item {% if 'console' in request.resolver_match.url_name %}is-active{% endif %}"{% if 'console' in request.resolver_match.url_name %} aria-current="page"{% endif %}>
+    <a href="{% url 'school:offerings' %}" class="ios-tab-item {% if 'console' in request.resolver_match.url_name %}is-active{% endif %}"{% if 'console' in request.resolver_match.url_name %} aria-current="page"{% endif %}>
       <svg class="ios-tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="20" x2="18" y2="10"></line>
         <line x1="12" y1="20" x2="12" y2="4"></line>
@@ -155,7 +157,7 @@
       </svg>
       <span>名額管理</span>
     </a>
-    <a href="{% url 'courses:browse' %}" class="ios-tab-item {% if active_tab == 'browse' %}is-active{% endif %}"{% if active_tab == 'browse' %} aria-current="page"{% endif %}>
+    <a href="{% url 'school:browse' %}" class="ios-tab-item {% if active_tab == 'browse' %}is-active{% endif %}"{% if active_tab == 'browse' %} aria-current="page"{% endif %}>
       <svg class="ios-tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
@@ -193,5 +195,7 @@
 <script src="{% static 'js/navigation.js' %}?v=20261029a" defer></script>
 <dialog class="conflict-dialog" id="schedule-conflict-dialog" aria-labelledby="conflict-dialog-title" aria-describedby="conflict-dialog-intro"><div class="conflict-dialog-content"><span class="conflict-dialog-symbol" aria-hidden="true">!</span><h2 id="conflict-dialog-title">時間有衝突</h2><p id="conflict-dialog-intro"></p><ul id="conflict-dialog-list"></ul><form method="dialog"><button class="btn btn-primary" type="submit" autofocus>我知道了，返回調整</button></form></div></dialog>
 <script src="{% static 'js/conflict-dialog.js' %}?v=20261029c" defer></script>
+<dialog class="operation-dialog" id="operation-dialog" aria-labelledby="operation-dialog-title"><div class="operation-dialog-inner"><span aria-hidden="true">✓</span><h2 id="operation-dialog-title">操作完成</h2><p id="operation-dialog-message"></p><button type="button" class="btn btn-primary" id="operation-dialog-close">知道了</button></div></dialog>
+<script src="{% static 'js/operation-dialog.js' %}?v=20261029a" defer></script>
 </body>
 </html>

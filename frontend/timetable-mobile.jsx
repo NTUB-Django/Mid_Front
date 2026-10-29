@@ -5,6 +5,7 @@ const root = document.getElementById("mobile-timetable-root");
 const dataNode = document.getElementById("mobile-timetable-data");
 
 function EventCard({ event, editable }) {
+  const palette = event.isCustom ? {"--tt-accent": event.colorHex, "--tt-wash": event.colorWash} : undefined;
   const content = (
     <>
       <div className="mobile-agenda-card__time">
@@ -12,7 +13,7 @@ function EventCard({ event, editable }) {
         <span>{event.end}</span>
       </div>
       <div className="mobile-agenda-card__body">
-        <span className="mobile-agenda-card__code">{event.isCustom ? "個人行程" : event.code}</span>
+        <span className="mobile-agenda-card__code">{event.isImported ? "Excel 課程" : event.isCustom ? "個人行程" : event.code}</span>
         <h3>{event.name}</h3>
         {(event.room || event.teacher) && (
           <p>{[event.room, event.teacher].filter(Boolean).join("・")}</p>
@@ -24,12 +25,12 @@ function EventCard({ event, editable }) {
   );
 
   if (event.isCustom && editable) {
-    return <button type="button" className={`mobile-agenda-card tt-card-${event.color}`} onClick={() => document.dispatchEvent(new CustomEvent('schedule:edit', {detail: {id: event.customId}}))} aria-label={`編輯行程：${event.name}`}>{content}</button>;
+    return <button type="button" className={`mobile-agenda-card tt-card-${event.color}`} style={palette} onClick={() => document.dispatchEvent(new CustomEvent('schedule:edit', {detail: {id: event.customId}}))} aria-label={`編輯行程：${event.name}`}>{content}</button>;
   }
   return event.url ? (
     <a className={`mobile-agenda-card tt-card-${event.color}`} href={event.url}>{content}</a>
   ) : (
-    <article className={`mobile-agenda-card tt-card-${event.color}`}>{content}</article>
+    <article className={`mobile-agenda-card tt-card-${event.color}`} style={palette}>{content}</article>
   );
 }
 

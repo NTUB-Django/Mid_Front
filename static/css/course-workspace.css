@@ -10,6 +10,7 @@
 .schedule-summary strong{font-size:18px;color:#354b6c;margin-right:3px;font-weight:600}
 .schedule-toolbar nav{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
 .schedule-toolbar nav a,.schedule-toolbar nav button{color:#526d94;font:inherit;font-size:12px;text-decoration:none;background:none;border:0;padding:8px 0;cursor:pointer}
+.schedule-toolbar nav button.schedule-danger{color:#b42318;font-weight:700}.import-cleanup-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:20px}.import-cleanup-actions span{color:#64788b;font-size:13px}
 .schedule-onboarding{padding:14px 20px;display:flex;align-items:center;gap:16px;background:#edf2ff;border:1px solid #dde5fb;font-size:12px;color:#5b7095;flex-wrap:wrap}
 .schedule-onboarding p{margin:0}.schedule-onboarding a{color:#3264ef;text-decoration:none}
 .schedule-workspace .timetable-frame{border:1px solid #e2e7ef;border-radius:0;box-shadow:none;background:#fff;overflow:hidden}

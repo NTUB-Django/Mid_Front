@@ -78,7 +78,8 @@ def friend_request(request):
         return HttpResponseBadRequest("無法邀請自己。")
     low, high = sorted([request.user.pk, target.pk])
     pair, created = Friendship.objects.get_or_create(user_low_id=low, user_high_id=high, defaults={"requested_by": request.user})
-    messages.info(request, "好友邀請已送出。" if created else "已有好友關係或待處理邀請，請在邀請區處理。")
+    notifier = messages.success if created else messages.info
+    notifier(request, "好友邀請已送出。" if created else "已有好友關係或待處理邀請，請在邀請區處理。")
     return redirect("accounts:connections")
 
 

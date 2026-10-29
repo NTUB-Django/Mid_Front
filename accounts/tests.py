@@ -186,9 +186,10 @@ class EmailLoginTests(TestCase):
     def setUpTestData(cls):
         cls.user = User.objects.create_user(username="email-student", email="student@example.com", password="Str0ng-planner-password")
 
-    def test_login_by_email_case_insensitive_or_username(self):
-        for identifier in ["email-student", "student@example.com", "STUDENT@EXAMPLE.COM"]:
+    def test_login_by_email_case_insensitive(self):
+        for identifier in ["student@example.com", "STUDENT@EXAMPLE.COM"]:
             self.assertEqual(authenticate(username=identifier, password="Str0ng-planner-password"), self.user)
+        self.assertIsNone(authenticate(username="email-student", password="Str0ng-planner-password"))
         self.assertIsNone(authenticate(username="student@example.com", password="wrong"))
 
     def test_inactive_user_cannot_login(self):
@@ -196,9 +197,9 @@ class EmailLoginTests(TestCase):
         self.user.save()
         self.assertIsNone(authenticate(username=self.user.email, password="Str0ng-planner-password"))
 
-    def test_email_collision_fails_closed(self):
+    def test_username_cannot_be_used_instead_of_email(self):
         User.objects.create_user(username="student@example.com", password="Other-planner-password")
-        self.assertIsNone(authenticate(username="student@example.com", password="Str0ng-planner-password"))
+        self.assertEqual(authenticate(username="student@example.com", password="Str0ng-planner-password"), self.user)
         self.assertIsNone(authenticate(username="student@example.com", password="Other-planner-password"))
 
     def test_duplicate_email_rejected_by_database(self):
@@ -230,7 +231,7 @@ class EmailLoginTests(TestCase):
         self.assertFalse(AccountEmailForm({"email": other.email, "current_password": "Str0ng-planner-password"}, instance=self.user).is_valid())
 
     def test_login_and_register_pages_show_email_fields(self):
-        self.assertContains(self.client.get(reverse("accounts:login")), "帳號或 Email")
+        self.assertContains(self.client.get(reverse("accounts:login")), "Email")
         self.assertContains(self.client.get(reverse("accounts:register")), 'name="email"')
 
     def test_email_login_form_creates_session_with_valid_generated_challenge(self):

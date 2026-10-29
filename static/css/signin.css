@@ -36,7 +36,8 @@
 @media(max-width:600px){.signin-header{padding:18px 24px}.signin-main{padding:36px 24px;align-items:start}.signin-form-panel h1{font-size:27px}.signin-intro{margin-bottom:26px}}
 @media(prefers-reduced-motion:reduce){.signin-page *{transition:none}}
 
-.signin-page .signin-form button.signin-submit,.signin-page .signin-form button.signin-submit:is(:hover,:focus,:active){color:#fff;-webkit-text-fill-color:#fff}
+.signin-page .signin-form button.signin-submit,.signin-page .signin-form button.signin-submit:is(:hover,:focus,:active,:disabled){color:#fff;-webkit-text-fill-color:#fff}
 
 .signin-register-identifiers{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.signin-register-identifiers .signin-field{min-width:0}
 @media(max-width:480px){.signin-register-identifiers{grid-template-columns:1fr}}
+.signin-error-dialog{border:0;border-radius:18px;box-shadow:0 24px 70px rgba(18,43,55,.24);max-width:min(90vw,380px);padding:26px;background:#fff;color:#17333f}.signin-error-dialog::backdrop{background:rgba(14,35,47,.44)}.signin-error-dialog h2{font-size:1.2rem;margin:0 0 10px}.signin-error-dialog p{margin:0 0 20px;line-height:1.6}.signin-error-dialog .signin-submit{width:100%}

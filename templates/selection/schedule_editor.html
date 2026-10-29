@@ -10,7 +10,7 @@
     <div class="editor-time-summary" aria-live="polite" id="editor-time-summary">選擇星期與時間</div>
     <div class="form-row-2">
       <div class="form-group"><label for="id_weekday">星期</label>{{ custom_form.weekday }}{{ custom_form.weekday.errors }}</div>
-      <div class="form-group"><label for="id_color">行程色彩</label>{{ custom_form.color }}{{ custom_form.color.errors }}</div>
+      <div class="form-group"><label for="id_color">行程色彩</label><div class="editor-color-picker">{{ custom_form.color }}<span id="editor-color-preview" role="img" aria-label="藍色預覽"></span></div>{{ custom_form.color.errors }}</div>
     </div>
     <div class="form-row-2">
       <div class="form-group"><label for="id_start">開始時間</label>{{ custom_form.start }}{{ custom_form.start.errors }}</div>
@@ -22,6 +22,8 @@
       <button type="button" data-duration="120">2 小時</button>
     </div>
     <div class="form-group"><label for="id_location">地點／教室（選填）</label>{{ custom_form.location }}{{ custom_form.location.errors }}</div>
+    <div class="form-group"><label for="id_visibility">誰可以看這個行程</label>{{ custom_form.visibility }}{{ custom_form.visibility.errors }}<p class="schedule-grid-hint">此設定會進一步限制課表的分享範圍。課表未分享給對方時，對方仍無法查看。</p></div>
+    <fieldset class="editor-group-permissions" id="editor-group-permissions"><legend>允許查看的群組</legend>{{ custom_form.shared_groups }}{{ custom_form.shared_groups.errors }}<p class="schedule-grid-hint">僅能選擇自己建立或已加入的群組。</p></fieldset>
     <details id="editor-details"{% if custom_form.note.value or custom_form.period.value %} open{% endif %}>
       <summary>新增說明與節次標記</summary>
       <div class="form-group"><label for="id_note">說明</label>{{ custom_form.note }}{{ custom_form.note.errors }}</div>

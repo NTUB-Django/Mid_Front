@@ -57,9 +57,9 @@
               <td class="tt-cell"{% if can_edit_schedule %} data-weekday="{{ forloop.counter }}" data-start="{{ period.1|time:'H:i' }}" data-end="{{ period.2|time:'H:i' }}"{% endif %}>
                 {% for cell in cells %}
                   {% if cell.is_custom %}
-                    <div class="tt-card tt-card-{{ cell.color|default:'blue' }} tt-custom-card" tabindex="0">
+                    <div class="tt-card tt-card-{{ cell.color|default:'blue' }} tt-custom-card" style="--tt-accent:{{ cell.color_hex }};--tt-wash:{{ cell.color_wash }}" tabindex="0">
                       <div class="tt-card-head">
-                        <span class="tt-tag">個人行程</span>
+                        <span class="tt-tag">{% if cell.is_imported %}Excel 課程{% else %}個人行程{% endif %}</span>
                         {% if can_edit_schedule %}<form method="post" action="{% url 'selection:custom_schedule_delete' cell.id %}" class="inline-form"
                               onsubmit="return confirm('確定要刪除「{{ cell.name }}」行程嗎？');">
                           {% csrf_token %}
@@ -96,7 +96,7 @@
   </div>
 </div>
 {% if mobile_timetable_days %}
-  <script defer src="{% static 'js/timetable-mobile.js' %}?v=20261029a"></script>
+  <script defer src="{% static 'js/timetable-mobile.js' %}?v=20261029f"></script>
 {% endif %}
   </div>
 {% else %}

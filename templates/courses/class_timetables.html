@@ -9,7 +9,7 @@
   </div>
   {% if user.is_school_role or user.is_admin_role %}
     <div class="page-head-actions">
-      <a class="btn btn-outline" href="{% url 'selection:console_offerings' %}">名額管理</a>
+      <a class="btn btn-outline" href="{% url 'school:offerings' %}">名額管理</a>
     </div>
   {% endif %}
 </div>
@@ -38,7 +38,7 @@
     </div>
   </div>
 
-  <form method="get" action="{% url 'courses:class_timetables' %}" class="form-grid">
+  <form method="get" action="{% url 'school:classes' %}" class="form-grid">
     <div class="form-group">
       <label for="id_select_class">3. 選擇班級 *</label>
       <select id="id_select_class" name="class_id" class="input" onchange="this.form.submit()">
@@ -100,15 +100,15 @@
             <tr>
               <td>{{ off.course.code }}</td>
               <td>{{ off.serial }}</td>
-              <td><strong><a href="{% url 'courses:offering_detail' off.id %}">{{ off.course.name }}</a></strong></td>
+              <td><strong><a href="{% url 'school:offering_detail' off.id %}">{{ off.course.name }}</a></strong></td>
               <td>{{ off.teacher|default:"—" }}</td>
               <td>{{ off.capacity }} 人</td>
               <td><span class="badge badge-selected">{{ off.selected_count }} 人</span></td>
               <td>{{ off.slots_summary|default:"未定" }}</td>
               <td>
-                <a class="btn btn-sm btn-outline" href="{% url 'courses:offering_detail' off.id %}">查看詳情</a>
+                <a class="btn btn-sm btn-outline" href="{% url 'school:offering_detail' off.id %}">查看詳情</a>
                 {% if user.is_school_role or user.is_admin_role %}
-                  <a class="btn btn-sm btn-ghost" href="{% url 'courses:offering_roster' off.id %}">學生名冊</a>
+                  <a class="btn btn-sm btn-ghost" href="{% url 'school:offering_roster' off.id %}">學生名冊</a>
                 {% endif %}
               </td>
             </tr>

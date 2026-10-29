@@ -8,7 +8,18 @@
   document.body.append(dialog);
   dialog.append(panel);
   const records = JSON.parse(document.getElementById('schedule-editor-data').textContent);
-  const inputs = Object.fromEntries(['title', 'weekday', 'start', 'end', 'location', 'color', 'period', 'note'].map(name => [name, form.elements.namedItem(name)]));
+  const palette = JSON.parse(document.getElementById('event-color-palette').textContent);
+  const inputs = Object.fromEntries(['title', 'weekday', 'start', 'end', 'location', 'color', 'period', 'note', 'visibility'].map(name => [name, form.elements.namedItem(name)]));
+  const groupInputs = [...form.querySelectorAll('input[name="shared_groups"]')];
+  function updateAppearance() {
+    const selected = palette[inputs.color.value] || palette.blue;
+    const preview = document.getElementById('editor-color-preview');
+    preview.style.backgroundColor = selected.hex;
+    preview.setAttribute('aria-label', `${selected.label}預覽 ${selected.hex}`);
+    document.getElementById('editor-group-permissions').hidden = inputs.visibility.value !== 'groups';
+  }
+  inputs.color.addEventListener('change', updateAppearance);
+  inputs.visibility.addEventListener('change', updateAppearance);
   const heading = document.getElementById('schedule-editor-title');
   const deleteButton = document.getElementById('editor-delete');
   const deleteForm = document.getElementById('editor-delete-form');
@@ -26,9 +37,11 @@
     returnFocus = document.activeElement;
     form.reset();
     panel.querySelectorAll('.errorlist, .alert-error').forEach(node => node.remove());
-    Object.entries({...Object.fromEntries(Object.keys(inputs).map(key => [key, ''])), weekday: new Date().getDay() || 7, start: '09:00', end: '10:00', color: 'blue', ...values}).forEach(([key, value]) => {
+    Object.entries({...Object.fromEntries(Object.keys(inputs).map(key => [key, ''])), weekday: new Date().getDay() || 7, start: '09:00', end: '10:00', color: 'blue', visibility: 'inherit', ...values}).forEach(([key, value]) => {
       if (inputs[key]) inputs[key].value = value;
     });
+    groupInputs.forEach(input => { input.checked = (values.sharedGroups || []).map(String).includes(input.value); });
+    updateAppearance();
     heading.textContent = record ? '編輯行程' : '新增行程';
     form.action = record ? record.updateUrl : panel.dataset.createUrl;
     deleteButton.hidden = !record;
@@ -106,6 +119,7 @@
     if (dragged) return;
     showEditor({...button.closest('.tt-cell').dataset});
   }));
+  updateAppearance();
   if (panel.dataset.open === 'true') {
     returnFocus = document.querySelector('a[href="#add-custom"]');
     deleteButton.hidden = !form.action.includes('/update/');
