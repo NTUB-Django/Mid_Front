@@ -115,6 +115,39 @@ class PersonalTimetableTests(TestCase):
         self.assertEqual(code, "conflict")
         self.assertIn("衝堂", msg)
 
+    def test_conflicting_course_returns_popup_notice_without_adding(self):
+        add_course_to_timetable(self.student, self.offering_a)
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("selection:course_add", args=[self.offering_b.pk]), follow=True)
+        self.assertContains(response, 'data-schedule-conflict data-conflict-kind="blocked"')
+        self.assertContains(response, 'id="schedule-conflict-dialog"')
+        self.assertContains(response, "09:10–10:00")
+        self.assertFalse(Selection.objects.filter(user=self.student, offering=self.offering_b).exists())
+
+    def test_preselected_course_still_checks_conflict_before_promotion(self):
+        add_course_to_timetable(self.student, self.offering_a)
+        selection = Selection.objects.create(user=self.student, offering=self.offering_b, status=Selection.Status.PRE)
+        code, _ = add_course_to_timetable(self.student, self.offering_b)
+        self.assertEqual(code, "conflict")
+        selection.refresh_from_db()
+        self.assertEqual(selection.status, Selection.Status.PRE)
+
+    def test_custom_overlap_popup_explains_schedule_was_saved(self):
+        add_course_to_timetable(self.student, self.offering_a)
+        self.client.force_login(self.student)
+        response = self.client.post(reverse("selection:custom_schedule_add"), {"title": "重疊行程", "weekday": 1, "start": "08:30", "end": "09:30", "color": "blue"}, follow=True)
+        self.assertContains(response, 'data-schedule-conflict data-conflict-kind="saved"')
+        self.assertContains(response, "行程已儲存")
+        self.assertTrue(self.student.custom_schedules.filter(title="重疊行程").exists())
+
+    def test_class_import_popup_lists_skipped_conflicts(self):
+        add_course_to_timetable(self.student, self.offering_b)
+        self.client.force_login(self.student)
+        response = self.client.post(reverse("selection:import_class"), {"student_class": self.student_class.pk}, follow=True)
+        self.assertContains(response, 'data-schedule-conflict data-conflict-kind="import"')
+        self.assertContains(response, "因衝堂未加入")
+        self.assertFalse(self.student.selections.filter(offering=self.offering_a).exists())
+
     def test_custom_schedule_and_conflicts(self):
         pass
 

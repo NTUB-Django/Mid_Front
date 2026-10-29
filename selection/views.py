@@ -175,6 +175,8 @@ def course_add(request, pk):
         messages.success(request, msg)
     elif code == "duplicate":
         messages.info(request, msg)
+    elif code == "conflict":
+        messages.error(request, msg, extra_tags="schedule-conflict schedule-blocked")
     else:
         messages.error(request, msg)
     return redirect_back(request, fallback="courses:offering_detail", fallback_args=[offering.pk])
@@ -229,7 +231,7 @@ def _save_custom_schedule(request, instance=None):
         form.cleaned_data["end"], exclude_id=instance.pk if instance else None,
     )
     if conflicts:
-        messages.warning(request, f"提醒：行程與現有排程重疊（{'；'.join(conflicts[:2])}）")
+        messages.warning(request, f"行程已儲存，但與現有排程重疊：{'；'.join(conflicts)}。請視需要編輯時間。", extra_tags="schedule-conflict schedule-saved")
     item = form.save(commit=False)
     item.user = request.user
     item.save()
@@ -266,9 +268,9 @@ def import_class(request):
         if result["skipped"] > 0:
             msg_parts.append(f"略過 {result['skipped']} 門已在課表中的課程")
         if result["conflicts"]:
-            msg_parts.append(f"因衝堂未加入 {len(result['conflicts'])} 門（{result['conflicts'][0]}）")
+            msg_parts.append(f"因衝堂未加入 {len(result['conflicts'])} 門：{'；'.join(result['conflicts'])}")
 
-        messages.info(request, "，".join(msg_parts))
+        messages.info(request, "，".join(msg_parts), extra_tags="schedule-conflict schedule-import" if result["conflicts"] else "")
     return redirect("selection:timetable")
 
 

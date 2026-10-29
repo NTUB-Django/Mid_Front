@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="{% static 'css/design-system.css' %}?v=20261018d">
 <link rel="stylesheet" href="{% static 'css/workspaces.css' %}?v=20261018c">
 {% block page_css %}{% endblock %}
+<link rel="stylesheet" href="{% static 'css/conflict-dialog.css' %}?v=20261029c">
 </head>
 <body class="{% if not user.is_authenticated %}is-anonymous{% elif user.is_school_role %}is-school-view{% else %}is-student-view{% endif %}">
 <a class="skip-link" href="#main-content">跳至主內容</a>
@@ -68,7 +69,7 @@
   {% if messages %}
     <div class="messages">
       {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        <div class="alert alert-{{ message.level_tag }}"{% if 'schedule-conflict' in message.tags %} data-schedule-conflict data-conflict-kind="{% if 'schedule-blocked' in message.tags %}blocked{% elif 'schedule-saved' in message.tags %}saved{% else %}import{% endif %}"{% endif %}>{{ message }}</div>
       {% endfor %}
     </div>
   {% endif %}
@@ -190,5 +191,7 @@
 </script>
 {% block footer_js %}{% endblock %}
 <script src="{% static 'js/navigation.js' %}?v=20261029a" defer></script>
+<dialog class="conflict-dialog" id="schedule-conflict-dialog" aria-labelledby="conflict-dialog-title" aria-describedby="conflict-dialog-intro"><div class="conflict-dialog-content"><span class="conflict-dialog-symbol" aria-hidden="true">!</span><h2 id="conflict-dialog-title">時間有衝突</h2><p id="conflict-dialog-intro"></p><ul id="conflict-dialog-list"></ul><form method="dialog"><button class="btn btn-primary" type="submit" autofocus>我知道了，返回調整</button></form></div></dialog>
+<script src="{% static 'js/conflict-dialog.js' %}?v=20261029c" defer></script>
 </body>
 </html>

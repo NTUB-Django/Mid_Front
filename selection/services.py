@@ -62,14 +62,14 @@ def check_conflicts(offering, user):
             if other.offering_id == offering.id:
                 continue
             if slot.weekday == other.weekday and time_intervals_overlap(slot.start, slot.end, other.start, other.end):
-                conflicts.append(f"星期{slot.get_weekday_display()} {slot.period} 與「{other.offering.course.name}」衝堂")
+                conflicts.append(f"{slot.get_weekday_display()} {slot.start:%H:%M}–{slot.end:%H:%M} 與「{other.offering.course.name}」（{other.start:%H:%M}–{other.end:%H:%M}）衝堂")
 
 
     customs = user.custom_schedules.all()
     for slot in offering.slots.all():
         for c in customs:
             if slot.weekday == c.weekday and time_intervals_overlap(slot.start, slot.end, c.start, c.end):
-                conflicts.append(f"星期{slot.get_weekday_display()} {slot.period} 與個人行程「{c.title}」衝堂")
+                conflicts.append(f"{slot.get_weekday_display()} {slot.start:%H:%M}–{slot.end:%H:%M} 與個人行程「{c.title}」（{c.start:%H:%M}–{c.end:%H:%M}）衝堂")
 
     return conflicts
 
@@ -80,32 +80,32 @@ def check_custom_conflict(user, weekday, start, end, exclude_id=None):
 
     for other in get_user_enrolled_slots(user):
         if other.weekday == weekday and time_intervals_overlap(start, end, other.start, other.end):
-            conflicts.append(f"與既有課程「{other.offering.course.name}（{other.period}）」衝堂")
+            conflicts.append(f"{other.get_weekday_display()} 與既有課程「{other.offering.course.name}」（{other.start:%H:%M}–{other.end:%H:%M}）衝堂")
 
 
     customs = user.custom_schedules.exclude(id=exclude_id) if exclude_id else user.custom_schedules.all()
     for c in customs:
         if c.weekday == weekday and time_intervals_overlap(start, end, c.start, c.end):
-            conflicts.append(f"與個人行程「{c.title}（{c.start:%H:%M}–{c.end:%H:%M}）」衝堂")
+            conflicts.append(f"{c.get_weekday_display()} 與個人行程「{c.title}」（{c.start:%H:%M}–{c.end:%H:%M}）衝堂")
 
     return conflicts
 
 
 @transaction.atomic
 def add_course_to_timetable(user, offering):
-    if Selection.objects.filter(user=user, offering=offering).exists():
-        sel = Selection.objects.filter(user=user, offering=offering).first()
-        if sel.status == Selection.Status.SELECTED:
-            return "duplicate", f"「{offering.display_name}」已在你的個人課表中"
-
-        sel.status = Selection.Status.SELECTED
-        sel.save(update_fields=["status"])
-        return "ok", f"已將「{offering.display_name}」更新加入個人課表！"
+    sel = Selection.objects.filter(user=user, offering=offering).first()
+    if sel and sel.status == Selection.Status.SELECTED:
+        return "duplicate", f"「{offering.display_name}」已在你的個人課表中"
 
     conflicts = check_conflicts(offering, user)
     if conflicts:
-        clash = "；".join(conflicts[:3])
+        clash = "；".join(conflicts)
         return "conflict", f"加入失敗，發現衝堂：{clash}"
+
+    if sel:
+        sel.status = Selection.Status.SELECTED
+        sel.save(update_fields=["status"])
+        return "ok", f"已將「{offering.display_name}」更新加入個人課表！"
 
     Selection.objects.create(
         user=user,
