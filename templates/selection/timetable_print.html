@@ -4,7 +4,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#203b49">
 <title>{{ user.display_name|default:user.username }} 的個人課表 · NTUB</title>
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
 <style>
@@ -110,7 +113,7 @@
 
 <div class="print-actions">
   <button class="btn btn-primary" onclick="window.print()">🖨️ 列印此課表</button>
-  <button class="btn btn-outline" onclick="window.close()">關閉視窗</button>
+  <a class="btn btn-outline" href="{% url 'selection:timetable' %}">返回我的課表</a>
 </div>
 
 <div class="print-header">

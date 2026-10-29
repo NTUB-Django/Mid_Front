@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 const root = document.getElementById("mobile-timetable-root");
 const dataNode = document.getElementById("mobile-timetable-data");
 
-function EventCard({ event }) {
+function EventCard({ event, editable }) {
   const content = (
     <>
       <div className="mobile-agenda-card__time">
@@ -23,6 +23,9 @@ function EventCard({ event }) {
     </>
   );
 
+  if (event.isCustom && editable) {
+    return <button type="button" className={`mobile-agenda-card tt-card-${event.color}`} onClick={() => document.dispatchEvent(new CustomEvent('schedule:edit', {detail: {id: event.customId}}))} aria-label={`編輯行程：${event.name}`}>{content}</button>;
+  }
   return event.url ? (
     <a className={`mobile-agenda-card tt-card-${event.color}`} href={event.url}>{content}</a>
   ) : (
@@ -30,7 +33,7 @@ function EventCard({ event }) {
   );
 }
 
-function MobileTimetable({ days }) {
+function MobileTimetable({ days, editable }) {
   const todayIndex = days.findIndex((day) => day.isToday);
   const firstBusyIndex = days.findIndex((day) => day.events.length > 0);
   const [activeIndex, setActiveIndex] = useState(
@@ -65,7 +68,7 @@ function MobileTimetable({ days }) {
       </div>
       <div id="mobile-agenda-events" className="mobile-agenda__events" role="tabpanel">
         {activeDay.events.length ? (
-          activeDay.events.map((event) => <EventCard key={event.id} event={event} />)
+          activeDay.events.map((event) => <EventCard key={event.id} event={event} editable={editable} />)
         ) : (
           <div className="mobile-agenda__empty">
             <strong>{activeDay.isToday ? "今天沒有排定課程" : `${activeDay.label}沒有排定課程`}</strong>
@@ -73,6 +76,7 @@ function MobileTimetable({ days }) {
           </div>
         )}
       </div>
+      {editable && <button type="button" className="mobile-agenda-create" onClick={() => document.dispatchEvent(new CustomEvent('schedule:create', {detail: {weekday: activeDay.weekday}}))}>＋ 在{activeDay.label}新增行程</button>}
     </section>
   );
 }
@@ -80,7 +84,7 @@ function MobileTimetable({ days }) {
 if (root && dataNode) {
   try {
     root.parentElement?.classList.add("mobile-agenda-ready");
-    createRoot(root).render(<MobileTimetable days={JSON.parse(dataNode.textContent)} />);
+    createRoot(root).render(<MobileTimetable days={JSON.parse(dataNode.textContent)} editable={root.dataset.editable === 'true'} />);
   } catch (error) {
     console.error("無法載入手機課表", error);
   }

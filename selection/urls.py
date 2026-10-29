@@ -14,6 +14,7 @@ urlpatterns = [
     path("course/<int:pk>/pref/", views.course_update_pref, name="course_update_pref"),
 
     path("custom/add/", views.custom_schedule_add, name="custom_schedule_add"),
+    path("custom/<int:pk>/update/", views.custom_schedule_update, name="custom_schedule_update"),
     path("custom/<int:pk>/delete/", views.custom_schedule_delete, name="custom_schedule_delete"),
 
     path("import/class/", views.import_class, name="import_class"),

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load course_tags static %}
 {% block title %}課程查詢｜NTUB Django{% endblock %}
-{% block page_css %}<link rel="stylesheet" href="{% static 'css/course-workspace.css' %}?v=20261018b">{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{% static 'css/course-workspace.css' %}?v=20261029a">{% endblock %}
 {% block content %}
 <div class="catalog-workspace">
 <header class="schedule-heading"><div><p>校內開課資料</p><h1>課程查詢</h1><span>找課程、確認上課時間，再加入個人課表。</span></div>{% if user.is_student_role %}<a class="catalog-back" href="{% url 'selection:timetable' %}">回我的課表 →</a>{% endif %}</header>
@@ -9,14 +9,15 @@
 <div class="catalog-keyword"><label for="catalog-q">課程名稱或課號</label><input id="catalog-q" type="search" name="q" maxlength="80" placeholder="輸入課名或課號" value="{{ form.q.value|default:'' }}">{% for error in form.q.errors %}<p class="catalog-error">{{ error }}</p>{% endfor %}</div>
 <div><label for="filter-edu">學制</label><select name="edu" id="filter-edu"><option value="">全部學制</option>{% for edu in group_by_edu %}<option value="{{ edu.pk }}" {% if form.edu.value|stringformat:"s" == edu.pk|stringformat:"s" %}selected{% endif %}>{{ edu.name }}</option>{% endfor %}</select>{% for error in form.edu.errors %}<p class="catalog-error">{{ error }}</p>{% endfor %}</div>
 <div><label for="filter-dept">系所</label><select name="dept" id="filter-dept"><option value="">全部系所</option>{% for edu in group_by_edu %}{% for dept in edu.departments.all %}<option value="{{ dept.pk }}" data-edu="{{ edu.pk }}" {% if form.dept.value|stringformat:"s" == dept.pk|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>{% endfor %}{% endfor %}</select>{% for error in form.dept.errors %}<p class="catalog-error">{{ error }}</p>{% endfor %}</div>
-<div class="catalog-search-actions"><button class="schedule-primary" type="submit">搜尋課程</button>{% if form.q.value or form.edu.value or form.dept.value %}<a href="{% url 'courses:browse' %}">清除條件</a>{% endif %}</div>
+<div><label for="filter-grade">年級</label><select name="grade" id="filter-grade">{% for value, label in form.fields.grade.choices %}<option value="{{ value }}" {% if form.grade.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>{% for error in form.grade.errors %}<p class="catalog-error">{{ error }}</p>{% endfor %}</div>
+<div class="catalog-search-actions"><button class="schedule-primary" type="submit">搜尋課程</button>{% if form.q.value or form.edu.value or form.dept.value or form.grade.value %}<a href="{% url 'courses:browse' %}">清除條件</a>{% endif %}</div>
 </form>
 <div class="catalog-results-head"><h2>查詢結果 <span>{{ page_obj.paginator.count }} 筆開課</span></h2><span>第 {{ page_obj.number }} ／ {{ page_obj.paginator.num_pages }} 頁</span></div>
 <div class="catalog-results">
 {% for o in page_obj.object_list %}{% with status=user_map|get_item:o.id %}
 <article class="catalog-course"><div class="catalog-course-info"><div class="catalog-course-code">{{ o.course.code }}<span>開課序號 {{ o.serial }}</span>{% if status %}<span class="catalog-status">{{ status|status_label }}</span>{% endif %}</div><h3><a href="{% url 'courses:offering_detail' o.id %}">{{ o.course.name }}</a></h3><div class="catalog-course-facts"><span>授課教師 <strong>{{ o.teacher|default:"待公布" }}</strong></span><span>名額 <strong>{{ o.capacity }} 人</strong></span></div><p class="catalog-classes">{% for cls in o.classes.all|slice:":2" %}{{ cls.full_name }}{% if not forloop.last %} · {% endif %}{% endfor %}{% if o.classes.count > 2 %} 等 {{ o.classes.count }} 個班級{% endif %}</p><ul class="catalog-slots">{% for slot in o.slots.all %}<li>週{{ slot.get_weekday_display }} · {{ slot.start|time:"H:i" }}–{{ slot.end|time:"H:i" }}{% if slot.room %} · {{ slot.room }}{% endif %}</li>{% empty %}<li>上課時間待公布</li>{% endfor %}</ul></div>
 <div class="catalog-course-actions"><a href="{% url 'courses:offering_detail' o.id %}">課程詳情 →</a>{% if user.is_student_role %}{% if status == 'selected' %}<form method="post" action="{% url 'selection:course_remove' o.id %}" onsubmit="return confirm('確定要從個人課表移除此課程嗎？');">{% csrf_token %}<button class="catalog-remove" type="submit">移出課表</button></form>{% else %}<form method="post" action="{% url 'selection:course_add' o.id %}">{% csrf_token %}<button class="catalog-add" type="submit">加入課表</button></form>{% endif %}{% endif %}</div></article>
-{% endwith %}{% empty %}<div class="catalog-empty"><h3>沒有符合條件的課程</h3><p>試試較短的課名，或選擇其他學制、系所。</p><a href="{% url 'courses:browse' %}">清除條件，查看全部課程 →</a></div>{% endfor %}
+{% endwith %}{% empty %}<div class="catalog-empty"><h3>沒有符合條件的課程</h3><p>試試較短的課名，或選擇其他學制、系所或年級。</p><a href="{% url 'courses:browse' %}">清除條件，查看全部課程 →</a></div>{% endfor %}
 </div>
 {% include "partials/pagination.html" with page_obj=page_obj %}
 </div>

@@ -1,3 +1,6 @@
+import re
+import unicodedata
+
 from django.db import models
 
 
@@ -46,6 +49,14 @@ class StudentClass(models.Model):
     @property
     def full_name(self) -> str:
         return f"{self.dept.edu.name} {self.dept.name} {self.name}"
+
+    @property
+    def grade(self):
+        match = re.search(r"([一二三四五六七八九1-9])(?:年|(?=[甲乙丙丁戊己庚辛壬癸]))", unicodedata.normalize("NFKC", self.name))
+        if not match:
+            return None
+        value = match.group(1)
+        return int(value) if value.isdigit() else "一二三四五六七八九".index(value) + 1
 
 
 class Course(models.Model):

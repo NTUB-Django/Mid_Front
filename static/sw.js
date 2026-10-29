@@ -1,11 +1,13 @@
-const CACHE_NAME = 'ntub-mid-v1';
+const CACHE_NAME = 'ntub-mid-20261029a';
 const PRECACHE_ASSETS = [
   '/static/css/app.css',
-  '/static/css/course-workspace.css?v=20261018b',
+  '/static/css/course-workspace.css?v=20261029a',
   '/static/css/workspaces.css?v=20261018c',
   '/static/css/design-system.css?v=20261018d',
-  '/static/js/navigation.js?v=20261018b',
-  '/static/manifest.json',
+  '/static/js/navigation.js?v=20261029a',
+  '/static/js/schedule-editor.js?v=20261029a',
+  '/static/css/schedule-editor.css?v=20261029a',
+  '/static/js/timetable-mobile.js?v=20261029a',
   '/static/icons/icon-192.png',
   '/static/img/timetable-icon.svg',
   '/static/icons/icon-512.png',
@@ -37,21 +39,15 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/static/')) {
+  if (url.pathname.startsWith('/static/') && !url.pathname.endsWith('/manifest.json') && !url.pathname.endsWith('/sw.js')) {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        return (
-          cached ||
-          fetch(request).then((response) => {
-            if (response.ok && response.type === 'basic') {
-              return caches.open(CACHE_NAME).then((cache) =>
-                cache.put(request, response.clone()).then(() => response)
-              );
-            }
-            return response;
-          })
-        );
-      })
+      fetch(request).then((response) => {
+        if (response.ok && response.type === 'basic' && !response.redirected) {
+          const copy = response.clone();
+          event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(request, copy)));
+        }
+        return response;
+      }).catch(async () => (await caches.match(request)) || Response.error())
     );
   }
 });

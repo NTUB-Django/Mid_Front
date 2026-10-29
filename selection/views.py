@@ -4,6 +4,8 @@ from django.core.paginator import Paginator
 from django.db import models
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from accounts.decorators import admin_role_required, school_role_required, student_role_required
 from courses.models import Department, EduType, Offering, StudentClass
@@ -32,7 +34,7 @@ def _mobile_timetable_data(timetable_data, today_weekday=None):
         for period_index, period in enumerate(timetable_data["periods"]):
             for item in timetable_data["grid"][period_index][weekday - 1]:
                 events.append({
-                    "id": f"{item['id']}-{weekday}-{item['start']:%H%M}",
+                    "id": f"{'custom' if item['is_custom'] else 'course'}-{item['id']}-{weekday}-{item['start']:%H%M}",
                     "name": item["name"],
                     "code": item["code"],
                     "period": item["period"],
@@ -43,6 +45,7 @@ def _mobile_timetable_data(timetable_data, today_weekday=None):
                     "notes": item["notes"] or "",
                     "color": item["color"],
                     "isCustom": item["is_custom"],
+                    "customId": item["id"] if item["is_custom"] else None,
                     "url": None if item["is_custom"] else reverse(
                         "courses:offering_detail", args=[item["offering_id"]]
                     ),
@@ -60,7 +63,10 @@ def _mobile_timetable_data(timetable_data, today_weekday=None):
 @login_required
 @student_role_required
 def timetable(request):
-    pass
+    return _render_timetable(request)
+
+
+def _render_timetable(request, custom_form=None, editing_schedule=None, status=200):
     timetable_data = build_personal_timetable(request.user, full_grid=True)
     stats = get_timetable_stats(request.user)
 
@@ -72,7 +78,8 @@ def timetable(request):
     )
     custom_schedules = request.user.custom_schedules.all().order_by("weekday", "start")
 
-    custom_form = CustomScheduleForm()
+    if custom_form is None:
+        custom_form = CustomScheduleForm(initial={"weekday": timezone.localdate().isoweekday(), "start": "09:00", "end": "10:00"})
     import_form = ImportClassScheduleForm(
         initial={"student_class": request.user.student_class} if request.user.student_class else None
     )
@@ -103,6 +110,19 @@ def timetable(request):
         "enrolled_courses": enrolled_courses,
         "custom_schedules": custom_schedules,
         "custom_form": custom_form,
+        "can_edit_schedule": True,
+        "editor_open": custom_form.is_bound,
+        "editing_schedule": editing_schedule,
+        "custom_action": reverse("selection:custom_schedule_update", args=[editing_schedule.pk]) if editing_schedule else reverse("selection:custom_schedule_add"),
+        "schedule_editor_data": [
+            {"id": item.pk, "title": item.title, "weekday": item.weekday,
+             "period": item.period, "start": item.start.strftime("%H:%M"),
+             "end": item.end.strftime("%H:%M"), "location": item.location,
+             "color": item.color, "note": item.note,
+             "updateUrl": reverse("selection:custom_schedule_update", args=[item.pk]),
+             "deleteUrl": reverse("selection:custom_schedule_delete", args=[item.pk])}
+            for item in custom_schedules
+        ],
         "import_form": import_form,
         "all_edus": all_edus,
         "all_depts": all_depts,
@@ -113,7 +133,7 @@ def timetable(request):
             timetable_data, today_weekday=stats["today_weekday"]
         ),
     }
-    return render(request, "selection/timetable.html", context)
+    return render(request, "selection/timetable.html", context, status=status)
 
 
 @login_required
@@ -185,31 +205,39 @@ def course_update_pref(request, pk):
 
 @login_required
 @student_role_required
+@require_POST
 def custom_schedule_add(request):
-    pass
-    if request.method == "POST":
-        form = CustomScheduleForm(request.POST)
-        if form.is_valid():
-            weekday = form.cleaned_data["weekday"]
-            start = form.cleaned_data["start"]
-            end = form.cleaned_data["end"]
-            conflicts = check_custom_conflict(request.user, weekday, start, end)
-            if conflicts:
-                clash_text = "；".join(conflicts[:2])
-                messages.warning(request, f"提醒：新增的行程「{form.cleaned_data['title']}」與現有排程重疊（{clash_text}）")
-
-            item = form.save(commit=False)
-            item.user = request.user
-            item.save()
-            messages.success(request, f"已新增個人行程「{item.title}」")
-        else:
-            errors = "、".join([f"{f}: {e[0]}" for f, e in form.errors.items()])
-            messages.error(request, f"新增失敗：{errors}")
-    return redirect_back(request, fallback="selection:timetable")
+    return _save_custom_schedule(request)
 
 
 @login_required
 @student_role_required
+@require_POST
+def custom_schedule_update(request, pk):
+    item = get_object_or_404(CustomSchedule, pk=pk, user=request.user)
+    return _save_custom_schedule(request, item)
+
+
+def _save_custom_schedule(request, instance=None):
+    form = CustomScheduleForm(request.POST, instance=instance)
+    if not form.is_valid():
+        return _render_timetable(request, custom_form=form, editing_schedule=instance, status=400)
+    conflicts = check_custom_conflict(
+        request.user, form.cleaned_data["weekday"], form.cleaned_data["start"],
+        form.cleaned_data["end"], exclude_id=instance.pk if instance else None,
+    )
+    if conflicts:
+        messages.warning(request, f"提醒：行程與現有排程重疊（{'；'.join(conflicts[:2])}）")
+    item = form.save(commit=False)
+    item.user = request.user
+    item.save()
+    messages.success(request, f"已{'更新' if instance else '新增'}個人行程「{item.title}」")
+    return redirect("selection:timetable")
+
+
+@login_required
+@student_role_required
+@require_POST
 def custom_schedule_delete(request, pk):
     pass
     item = get_object_or_404(CustomSchedule, pk=pk, user=request.user)

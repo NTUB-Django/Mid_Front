@@ -7,7 +7,7 @@
 
 <div class="schedule-workspace">
 <header class="schedule-heading"><div><p>個人課表 · 115學年度 第1學期</p><h1>我的課表</h1><span>{{ user.student_class.full_name|default:"課程與個人行程" }}</span></div><a class="schedule-primary" href="{% url 'courses:browse' %}">查詢與加入課程</a></header>
-<div class="schedule-toolbar"><div class="schedule-summary"><span><strong>{{ stats.total_courses }}</strong> 門課</span><span><strong>{{ stats.total_credits }}</strong> 學分</span><span><strong>{{ stats.total_customs }}</strong> 項行程</span></div><nav aria-label="課表工具"><a href="#import-class-section">匯入班級</a><button type="button" id="open-friends-btn">同學課表</button><a href="{% url 'selection:timetable_print' %}" target="_blank" rel="noopener">列印</a><a href="#add-custom">新增行程</a></nav></div>
+<div class="schedule-toolbar"><div class="schedule-summary"><span><strong>{{ stats.total_courses }}</strong> 門課</span><span><strong>{{ stats.total_credits }}</strong> 學分</span><span><strong>{{ stats.total_customs }}</strong> 項行程</span></div><nav aria-label="課表工具"><a href="#import-class-section">匯入班級</a><button type="button" id="open-friends-btn">同學課表</button><a href="{% url 'selection:timetable_print' %}" >列印</a><a href="#add-custom">新增行程</a></nav></div>
 {% if not stats.total_courses and not stats.total_customs %}<div class="schedule-onboarding"><p>還沒有課程？先匯入班級課表，再調整選修與個人行程。</p><a href="#import-class-section">選擇班級 →</a></div>{% endif %}
 {% include "partials/timetable_grid.html" with timetable=timetable stats=stats %}
 
@@ -164,6 +164,7 @@
               <div class="item-personal-note">說明：{{ c.note }}</div>
             {% endif %}
           </div>
+          <button type="button" class="btn btn-sm btn-outline" data-edit-schedule="{{ c.id }}">編輯</button>
           <form method="post" action="{% url 'selection:custom_schedule_delete' c.id %}" class="inline-form"
                 onsubmit="return confirm('確定要刪除「{{ c.title }}」此行程嗎？');">
             {% csrf_token %}
@@ -171,7 +172,7 @@
           </form>
         </div>
       {% empty %}
-        <p class="empty-hint">目前沒有個人行程，可在下方新增。</p>
+        <p class="empty-hint">目前沒有個人行程，點選「新增行程」，或在課表空白時段建立。</p>
       {% endfor %}
     </div>
   </section>
@@ -179,83 +180,9 @@
 
 <div class="schedule-section-grid">
 
-  <section class="panel" id="add-custom">
-    <h2 class="panel-title">新增個人行程</h2>
-    <p class="panel-sub">設定時間與地點，加入前會檢查是否與既有課程衝突。</p>
-
-
-    <div class="period-presets-bar">
-      <span class="preset-label">節次快速套用：</span>
-      <div class="preset-buttons">
-        <button type="button" class="btn btn-sm btn-ghost preset-btn" data-period="第一節" data-start="08:10" data-end="09:00">第 1 節</button>
-        <button type="button" class="btn btn-sm btn-ghost preset-btn" data-period="第二節" data-start="09:10" data-end="10:00">第 2 節</button>
-        <button type="button" class="btn btn-sm btn-ghost preset-btn" data-period="第三節" data-start="10:10" data-end="11:00">第 3 節</button>
-        <button type="button" class="btn btn-sm btn-ghost preset-btn" data-period="第四節" data-start="11:10" data-end="12:00">第 4 節</button>
-        <button type="button" class="btn btn-sm btn-ghost preset-btn" data-period="第五節" data-start="13:30" data-end="14:20">第 5 節</button>
-        <button type="button" class="btn btn-sm btn-ghost preset-btn" data-period="第六節" data-start="14:25" data-end="15:15">第 6 節</button>
-        <button type="button" class="btn btn-sm btn-ghost preset-btn" data-period="第七節" data-start="15:25" data-end="16:15">第 7 節</button>
-        <button type="button" class="btn btn-sm btn-ghost preset-btn" data-period="第八節" data-start="16:20" data-end="17:10">第 8 節</button>
-        <button type="button" class="btn btn-sm btn-ghost preset-btn" data-period="第九節" data-start="17:15" data-end="18:05">第 9 節</button>
-        <button type="button" class="btn btn-sm btn-ghost preset-btn" data-period="夜間時段" data-start="18:30" data-end="21:00">夜間</button>
-      </div>
-    </div>
-
-    <form method="post" action="{% url 'selection:custom_schedule_add' %}" class="form-grid">
-      {% csrf_token %}
-      {% if custom_form.non_field_errors %}
-        <div class="alert alert-error">{{ custom_form.non_field_errors }}</div>
-      {% endif %}
-      <div class="form-group">
-        <label for="id_title">行程名稱 *</label>
-        {{ custom_form.title }}
-        {% if custom_form.title.errors %}<small class="form-error">{{ custom_form.title.errors.0 }}</small>{% endif %}
-      </div>
-      <div class="form-row-2">
-        <div class="form-group">
-          <label for="id_weekday">星期 *</label>
-          {{ custom_form.weekday }}
-        </div>
-        <div class="form-group">
-          <label for="id_period">節次標記（選填）</label>
-          {{ custom_form.period }}
-        </div>
-      </div>
-      <div class="form-row-2">
-        <div class="form-group">
-          <label for="id_start">開始時間 *</label>
-          {{ custom_form.start }}
-          {% if custom_form.start.errors %}<small class="form-error">{{ custom_form.start.errors.0 }}</small>{% endif %}
-        </div>
-        <div class="form-group">
-          <label for="id_end">結束時間 *</label>
-          {{ custom_form.end }}
-          {% if custom_form.end.errors %}<small class="form-error">{{ custom_form.end.errors.0 }}</small>{% endif %}
-        </div>
-      </div>
-      <div class="form-row-2">
-        <div class="form-group">
-          <label for="id_location">地點 / 教室</label>
-          {{ custom_form.location }}
-        </div>
-        <div class="form-group">
-          <label for="id_color">標籤顏色</label>
-          {{ custom_form.color }}
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="id_note">備註說明</label>
-        {{ custom_form.note }}
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-primary" type="submit">確認新增行程</button>
-      </div>
-    </form>
-  </section>
-
-
   <section class="panel" id="import-class-section">
     <h2 class="panel-title">匯入班級課表</h2>
-    <p class="panel-sub">支援學制與系所兩級聯動快速篩選班級，一鍵將全班開課帶入個人課表。</p>
+    <p class="panel-sub">依學制、系所與年級篩選班級，一鍵將全班開課帶入個人課表。</p>
 
     <div class="form-row-2" style="margin-bottom: 12px;">
       <div class="form-group">
@@ -272,20 +199,22 @@
         <select id="filter-import-dept" class="input">
           <option value="">-- 全部系所 --</option>
           {% for dept in all_depts %}
-            <option value="{{ dept.code }}" data-edu="{{ dept.edu_id }}">{{ dept.edu.name }} - {{ dept.name }}</option>
+            <option value="{{ dept.pk }}" data-edu="{{ dept.edu_id }}">{{ dept.edu.name }} - {{ dept.name }}</option>
           {% endfor %}
         </select>
       </div>
     </div>
 
+    <div class="form-group"><label for="filter-import-grade">3. 依年級篩選</label><select id="filter-import-grade" class="input"><option value="">全部年級</option>{% for grade in "12345"|make_list %}<option value="{{ grade }}">{{ grade }} 年級</option>{% endfor %}</select></div>
+
     <form method="post" action="{% url 'selection:import_class' %}" class="form-grid">
       {% csrf_token %}
       <div class="form-group">
-        <label for="id_import_class">3. 選擇欲匯入的班級 *</label>
+        <label for="id_import_class">4. 選擇欲匯入的班級 *</label>
         <select id="id_import_class" name="student_class" class="input" required>
           <option value="">-- 請選擇班級 --</option>
           {% for cls in all_classes %}
-            <option value="{{ cls.id }}" data-edu="{{ cls.dept.edu_id }}" data-dept="{{ cls.dept.code }}"
+            <option value="{{ cls.id }}" data-edu="{{ cls.dept.edu_id }}" data-dept="{{ cls.dept_id }}" data-grade="{{ cls.grade|default_if_none:'' }}"
                     {% if user.student_class_id == cls.id %}selected{% endif %}>
               {{ cls.full_name }}
             </option>
@@ -302,9 +231,12 @@
   </section>
 </div>
 </div>
+{{ schedule_editor_data|json_script:"schedule-editor-data" }}
+{% include "selection/schedule_editor.html" %}
 {% endblock %}
-{% block page_css %}<link rel="stylesheet" href="{% static 'css/course-workspace.css' %}?v=20261018b">{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{% static 'css/course-workspace.css' %}?v=20261029a"><link rel="stylesheet" href="{% static 'css/schedule-editor.css' %}?v=20261029a">{% endblock %}
 {% block footer_js %}
+<script src="{% static 'js/schedule-editor.js' %}?v=20261029a" defer></script>
 <script>
 (function() {
   var friendsModal = document.getElementById('friends-modal');
@@ -347,41 +279,34 @@
       listClassmates.setAttribute('hidden', '');
     });
   }
-  var presetBtns = document.querySelectorAll('.preset-btn');
-  var periodInput = document.getElementById('id_period');
-  var startInput = document.getElementById('id_start');
-  var endInput = document.getElementById('id_end');
-
-  presetBtns.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      if (periodInput) periodInput.value = btn.dataset.period || '';
-      if (startInput) startInput.value = btn.dataset.start || '';
-      if (endInput) endInput.value = btn.dataset.end || '';
-    });
-  });
   var eduSel = document.getElementById('filter-import-edu');
   var deptSel = document.getElementById('filter-import-dept');
   var classSel = document.getElementById('id_import_class');
+  var gradeSel = document.getElementById('filter-import-grade');
 
   function syncCascading() {
     var edu = eduSel.value;
-    var dept = deptSel.value;
 
     for (var i = 0; i < deptSel.options.length; i++) {
       var opt = deptSel.options[i];
       if (!opt.dataset.edu) continue;
       opt.hidden = (edu !== '' && opt.dataset.edu !== edu);
+      opt.disabled = opt.hidden;
     }
     if (deptSel.selectedOptions.length && deptSel.selectedOptions[0].hidden) {
       deptSel.value = '';
     }
 
+    var dept = deptSel.value;
+    var grade = gradeSel.value;
     for (var j = 0; j < classSel.options.length; j++) {
       var cOpt = classSel.options[j];
       if (!cOpt.dataset.edu) continue;
       var matchEdu = (edu === '' || cOpt.dataset.edu === edu);
       var matchDept = (dept === '' || cOpt.dataset.dept === dept);
-      cOpt.hidden = !(matchEdu && matchDept);
+      var matchGrade = (grade === '' || cOpt.dataset.grade === grade);
+      cOpt.hidden = !(matchEdu && matchDept && matchGrade);
+      cOpt.disabled = cOpt.hidden;
     }
     if (classSel.selectedOptions.length && classSel.selectedOptions[0].hidden) {
       classSel.value = '';
@@ -391,6 +316,8 @@
   if (eduSel && deptSel && classSel) {
     eduSel.addEventListener('change', syncCascading);
     deptSel.addEventListener('change', syncCascading);
+    gradeSel.addEventListener('change', syncCascading);
+    syncCascading();
   }
 })();
 </script>

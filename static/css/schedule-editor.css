@@ -1,0 +1,38 @@
+.schedule-editor [hidden]{display:none!important}
+.schedule-editor-dialog{width:min(560px,calc(100% - 32px));max-height:calc(100dvh - 48px);padding:0;border:1px solid #dce3ee;border-radius:18px;background:#fff;color:#283a53;box-shadow:0 18px 70px #172d4750;overflow:auto}
+.schedule-editor-dialog::backdrop{background:#15263d66}
+.schedule-editor-dialog .schedule-editor{padding:26px;border:0;margin:0;background:#fff}
+.schedule-editor-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}
+.schedule-editor-heading p{font-size:12px;color:#60718b;margin:0 0 6px}
+.schedule-editor-heading h2{margin:0;font-size:23px;color:#283a53}
+.schedule-editor-heading button{border:0;background:#f1f4f8;border-radius:50%;width:40px;height:40px;font-size:25px;color:#506683;cursor:pointer}
+.schedule-editor .form-group{margin-bottom:16px}
+.schedule-editor label{display:block;margin-bottom:7px;font-size:13px;color:#536a85}
+.schedule-editor .input{width:100%;box-sizing:border-box;border:1px solid #dce3ee;border-radius:8px;min-height:46px;padding:10px 12px;font:inherit;font-size:16px;background:white;color:#263e5d}
+.schedule-editor .input:focus{outline:2px solid #3264ef;outline-offset:2px}
+.schedule-editor .editor-title-field .input{font-size:22px;border-width:0 0 2px;border-radius:0;padding-inline:0}
+.schedule-editor .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.editor-time-summary{padding:12px 14px;border-radius:8px;background:#eef4ff;color:#2852b3;font-size:13px;margin:0 0 18px;font-variant-numeric:tabular-nums}
+.editor-presets{display:flex;gap:8px;margin:-3px 0 20px;flex-wrap:wrap}
+.editor-presets button{font:inherit;font-size:12px;padding:7px 12px;min-height:36px;border:1px solid #d7e2f3;border-radius:20px;background:#fff;color:#46638a;cursor:pointer}
+.editor-presets button:hover{background:#eef4ff;border-color:#3264ef}
+.schedule-editor details summary{cursor:pointer;color:#41618b;font-size:13px;padding:8px 0 16px}
+.editor-actions{display:flex;gap:10px;align-items:center;border-top:1px solid #e8edf4;margin-top:22px;padding-top:18px}
+.editor-actions>span{flex:1}
+.editor-actions .btn{min-height:42px;border-radius:8px;white-space:nowrap}
+.schedule-editor .errorlist{color:#ad2525;font-size:13px;margin:7px 0;padding-left:18px}
+body.schedule-editor-open{overflow:hidden}
+.schedule-workspace .tt-cell[data-weekday]{position:relative}
+.tt-create-event{display:block;width:100%;min-height:68px;cursor:crosshair;border:0;background:transparent;color:#3264ef;font:inherit;border-radius:6px;user-select:none}
+.tt-create-event span{opacity:0;font-size:25px}
+.tt-create-event:hover,.tt-create-event:focus-visible,.tt-cell.is-selecting{background:#edf3ff!important}
+.tt-create-event:focus-visible{outline:2px solid #3264ef;outline-offset:-2px}
+.tt-create-event:hover span,.tt-create-event:focus-visible span{opacity:1}
+.tt-cell:has(.tt-card) .tt-create-event{min-height:24px}
+.tt-edit-event{display:block;width:100%;text-align:left;font:inherit;border:0;background:transparent;color:inherit;padding:0;cursor:pointer}
+.tt-edit-event:focus-visible{outline:2px solid #3264ef}
+.schedule-grid-hint{font-size:12px;line-height:1.7;color:#657b96;margin:10px 0}
+.mobile-agenda-create{width:100%;min-height:46px;margin-top:16px;border:1px dashed #a6bae2;border-radius:10px;background:#f4f7ff;color:#2852b3;font:inherit;font-size:14px;cursor:pointer}
+button.mobile-agenda-card{width:100%;font:inherit;text-align:left;cursor:pointer}
+@media(max-width:600px){.schedule-editor-dialog{width:100%;max-width:100%;max-height:calc(100dvh - env(safe-area-inset-top) - 20px);margin:auto 0 0;border-radius:20px 20px 0 0;border-bottom:0}.schedule-editor-dialog .schedule-editor{padding:22px 20px calc(20px + env(safe-area-inset-bottom))}.schedule-editor .form-row-2{gap:12px}.schedule-editor-heading h2{font-size:21px}.editor-actions{position:sticky;bottom:-1px;background:#fff;padding-bottom:8px}.schedule-editor .editor-title-field .input{font-size:20px}}
+@media print{.schedule-editor,.tt-create-event,.schedule-grid-hint{display:none!important}}

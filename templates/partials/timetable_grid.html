@@ -3,9 +3,10 @@
 <div class="timetable-responsive-shell{% if mobile_timetable_days %} has-mobile-agenda{% endif %}">
 {% if mobile_timetable_days %}
   {{ mobile_timetable_days|json_script:"mobile-timetable-data" }}
-  <div id="mobile-timetable-root" class="mobile-timetable-root" aria-live="polite"></div>
+  <div id="mobile-timetable-root" class="mobile-timetable-root" data-editable="{{ can_edit_schedule|yesno:'true,false' }}" aria-live="polite"></div>
   <noscript><p class="mobile-timetable-noscript">目前顯示完整週課表，可左右滑動查看各日。</p></noscript>
 {% endif %}
+{% if can_edit_schedule %}<p class="schedule-grid-hint">點選空白時段新增行程；電腦可拖曳同一天的時段設定起訖時間，點行程名稱即可編輯。行程每週重複。</p>{% endif %}
 <div class="timetable-frame">
   <div class="timetable-scroll">
     <table class="timetable timetable-app-grid">
@@ -53,19 +54,19 @@
             </th>
             {% for i in "1234567"|make_list %}
               {% with cells=row|get_item:forloop.counter0 %}
-              <td class="tt-cell">
+              <td class="tt-cell"{% if can_edit_schedule %} data-weekday="{{ forloop.counter }}" data-start="{{ period.1|time:'H:i' }}" data-end="{{ period.2|time:'H:i' }}"{% endif %}>
                 {% for cell in cells %}
                   {% if cell.is_custom %}
                     <div class="tt-card tt-card-{{ cell.color|default:'blue' }} tt-custom-card" tabindex="0">
                       <div class="tt-card-head">
                         <span class="tt-tag">個人行程</span>
-                        <form method="post" action="{% url 'selection:custom_schedule_delete' cell.id %}" class="inline-form"
+                        {% if can_edit_schedule %}<form method="post" action="{% url 'selection:custom_schedule_delete' cell.id %}" class="inline-form"
                               onsubmit="return confirm('確定要刪除「{{ cell.name }}」行程嗎？');">
                           {% csrf_token %}
                           <button type="submit" class="tt-del-btn" title="刪除行程" aria-label="刪除">×</button>
-                        </form>
+                        </form>{% endif %}
                       </div>
-                      <strong class="tt-name">{{ cell.name }}</strong>
+                      {% if can_edit_schedule %}<button type="button" class="tt-edit-event" data-edit-schedule="{{ cell.id }}" aria-label="編輯行程：{{ cell.name }}"><strong class="tt-name">{{ cell.name }}</strong></button>{% else %}<strong class="tt-name">{{ cell.name }}</strong>{% endif %}
                       {% if cell.room %}<div class="tt-meta">{{ cell.room }}</div>{% endif %}
                       {% if cell.notes %}<div class="tt-meta tt-note" title="{{ cell.notes }}">{{ cell.notes }}</div>{% endif %}
                     </div>
@@ -83,6 +84,7 @@
                     </div>
                   {% endif %}
                 {% endfor %}
+                {% if can_edit_schedule %}<button type="button" class="tt-create-event" aria-label="星期{{ forloop.counter }} {{ period.1|time:'H:i' }} 新增行程"><span aria-hidden="true">＋</span></button>{% endif %}
               </td>
               {% endwith %}
             {% endfor %}
@@ -94,7 +96,7 @@
   </div>
 </div>
 {% if mobile_timetable_days %}
-  <script defer src="{% static 'js/timetable-mobile.js' %}?v=20261015b"></script>
+  <script defer src="{% static 'js/timetable-mobile.js' %}?v=20261029a"></script>
 {% endif %}
   </div>
 {% else %}

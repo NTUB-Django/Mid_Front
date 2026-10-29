@@ -92,12 +92,20 @@ def browse(request):
         q = form.cleaned_data.get("q")
         edu = form.cleaned_data.get("edu")
         dept = form.cleaned_data.get("dept")
+        grade = form.cleaned_data.get("grade")
         if q:
             qs = qs.filter(models.Q(course__name__icontains=q) | models.Q(course__code__icontains=q))
-        if edu:
-            qs = qs.filter(classes__dept__edu=edu)
-        if dept:
-            qs = qs.filter(classes__dept=dept)
+        if edu or dept or grade:
+            classes = StudentClass.objects.all()
+            if edu:
+                classes = classes.filter(dept__edu=edu)
+            if dept:
+                classes = classes.filter(dept=dept)
+            if grade:
+                classes = [item.pk for item in classes.only("id", "name") if item.grade == grade]
+                qs = qs.filter(classes__pk__in=classes)
+            else:
+                qs = qs.filter(classes__in=classes)
 
     paginator = Paginator(qs, 24)
     page_obj = paginator.get_page(request.GET.get("page"))

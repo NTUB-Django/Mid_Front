@@ -1,5 +1,5 @@
 from datetime import time
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 
 from accounts.models import User
@@ -324,3 +324,80 @@ class PersonalTimetableTests(TestCase):
         self.assertContains(resp, "圖片驗證碼")
         self.assertContains(resp, "captcha")
         self.assertContains(resp, "js/signin.js")
+
+    def test_calendar_editor_creates_and_updates_a_weekly_event(self):
+        self.client.force_login(self.student)
+        values = {"title": "專題討論", "weekday": "3", "start": "13:00", "end": "14:30", "color": "green", "location": "圖書館", "note": "帶筆電"}
+        response = self.client.post(reverse("selection:custom_schedule_add"), values)
+        self.assertRedirects(response, reverse("selection:timetable"))
+        item = CustomSchedule.objects.get(user=self.student)
+        values.update(title="更新後的專題討論", end="15:00")
+        response = self.client.post(reverse("selection:custom_schedule_update", args=[item.pk]), values, follow=True)
+        self.assertEqual(response.status_code, 200)
+        item.refresh_from_db()
+        self.assertEqual(item.title, "更新後的專題討論")
+        self.assertEqual(item.end, time(15, 0))
+        self.assertNotContains(response, "與現有排程重疊")
+        self.assertContains(response, f'data-edit-schedule="{item.pk}"')
+        self.assertEqual(response.context["mobile_timetable_days"][2]["events"][0]["customId"], item.pk)
+
+    def test_invalid_calendar_event_keeps_values_and_opens_editor(self):
+        self.client.force_login(self.student)
+        values = {"title": "不要遺失的行程", "weekday": "2", "start": "14:00", "end": "13:00", "color": "blue", "note": "保留備註"}
+        response = self.client.post(reverse("selection:custom_schedule_add"), values)
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, "不要遺失的行程", status_code=400)
+        self.assertContains(response, "保留備註", status_code=400)
+        self.assertTrue(response.context["editor_open"])
+        self.assertFalse(CustomSchedule.objects.filter(user=self.student).exists())
+
+    def test_calendar_update_and_delete_require_owner_and_post(self):
+        owner = User.objects.create_user(username="event-owner", role=User.Role.STUDENT)
+        item = CustomSchedule.objects.create(user=owner, title="私人活動", weekday=2, start=time(13), end=time(14))
+        self.client.force_login(self.student)
+        self.assertEqual(self.client.post(reverse("selection:custom_schedule_update", args=[item.pk]), {}).status_code, 404)
+        self.assertEqual(self.client.get(reverse("selection:custom_schedule_add")).status_code, 405)
+        self.assertEqual(self.client.get(reverse("selection:custom_schedule_update", args=[item.pk])).status_code, 405)
+        self.assertEqual(self.client.get(reverse("selection:custom_schedule_delete", args=[item.pk])).status_code, 405)
+        self.assertTrue(CustomSchedule.objects.filter(pk=item.pk).exists())
+
+    def test_calendar_submission_requires_csrf(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.student)
+        self.assertEqual(client.post(reverse("selection:custom_schedule_add"), {}).status_code, 403)
+
+    def test_friend_timetable_has_no_calendar_edit_controls(self):
+        friend = User.objects.create_user(username="readonly-friend", role=User.Role.STUDENT)
+        CustomSchedule.objects.create(user=friend, title="自習", weekday=1, start=time(13), end=time(14))
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("selection:user_timetable", args=[friend.pk]))
+        self.assertNotContains(response, "data-edit-schedule=")
+        self.assertNotContains(response, 'class="tt-create-event"')
+
+
+class PwaNavigationTests(TestCase):
+    def test_manifest_covers_login_courses_profile_and_timetable(self):
+        import json
+        from urllib.parse import urljoin
+
+        response = self.client.get(reverse("pwa_manifest"))
+        manifest = json.loads(response.content)
+        self.assertEqual(manifest["scope"], "/")
+        self.assertEqual(manifest["display"], "standalone")
+        self.assertEqual(manifest["id"], "/selection/timetable/")
+        scope = urljoin("https://class2dj.nsir.uk/manifest.json", manifest["scope"])
+        for route in ["accounts:login", "accounts:profile", "courses:browse", "selection:timetable", "selection:timetable_print"]:
+            self.assertTrue(urljoin("https://class2dj.nsir.uk/", reverse(route)).startswith(scope))
+        self.assertIn("no-store", response.headers["Cache-Control"])
+
+    def test_worker_updates_without_shared_html_cache(self):
+        response = self.client.get(reverse("service_worker"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("no-store", response.headers["Cache-Control"])
+        self.assertContains(response, "ntub-mid-20261029a")
+
+    def test_print_page_has_pwa_metadata(self):
+        user = User.objects.create_user(username="pwa-user", role=User.Role.STUDENT)
+        self.client.force_login(user)
+        response = self.client.get(reverse("selection:timetable_print"))
+        self.assertContains(response, '<link rel="manifest" href="/manifest.json">', html=True)

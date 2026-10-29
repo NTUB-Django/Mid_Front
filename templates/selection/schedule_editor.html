@@ -1,0 +1,38 @@
+<section class="panel schedule-editor" id="add-custom" data-open="{{ editor_open|yesno:'true,false' }}" data-create-url="{% url 'selection:custom_schedule_add' %}">
+  <header class="schedule-editor-heading">
+    <div><p>每週重複的個人行程</p><h2 id="schedule-editor-title">{% if editing_schedule %}編輯行程{% else %}新增行程{% endif %}</h2></div>
+    <button type="button" data-close-editor aria-label="關閉行程編輯器" hidden>×</button>
+  </header>
+  <form method="post" action="{{ custom_action }}" id="schedule-editor-form">
+    {% csrf_token %}
+    {% if custom_form.errors %}<div class="alert alert-error" role="alert"><strong>請檢查以下欄位，內容已保留。</strong>{{ custom_form.non_field_errors }}</div>{% endif %}
+    <div class="form-group editor-title-field"><label for="id_title">行程名稱</label>{{ custom_form.title }}{{ custom_form.title.errors }}</div>
+    <div class="editor-time-summary" aria-live="polite" id="editor-time-summary">選擇星期與時間</div>
+    <div class="form-row-2">
+      <div class="form-group"><label for="id_weekday">星期</label>{{ custom_form.weekday }}{{ custom_form.weekday.errors }}</div>
+      <div class="form-group"><label for="id_color">行程色彩</label>{{ custom_form.color }}{{ custom_form.color.errors }}</div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-group"><label for="id_start">開始時間</label>{{ custom_form.start }}{{ custom_form.start.errors }}</div>
+      <div class="form-group"><label for="id_end">結束時間</label>{{ custom_form.end }}{{ custom_form.end.errors }}</div>
+    </div>
+    <div class="editor-presets" aria-label="常用時段">
+      <button type="button" data-duration="30">30 分鐘</button>
+      <button type="button" data-duration="60">1 小時</button>
+      <button type="button" data-duration="120">2 小時</button>
+    </div>
+    <div class="form-group"><label for="id_location">地點／教室（選填）</label>{{ custom_form.location }}{{ custom_form.location.errors }}</div>
+    <details id="editor-details"{% if custom_form.note.value or custom_form.period.value %} open{% endif %}>
+      <summary>新增說明與節次標記</summary>
+      <div class="form-group"><label for="id_note">說明</label>{{ custom_form.note }}{{ custom_form.note.errors }}</div>
+      <div class="form-group"><label for="id_period">節次標記（選填）</label>{{ custom_form.period }}{{ custom_form.period.errors }}</div>
+    </details>
+    <footer class="editor-actions">
+      <button type="button" id="editor-delete" class="btn btn-danger" hidden>刪除行程</button>
+      <span></span>
+      <button type="button" class="btn btn-outline" data-close-editor hidden>取消</button>
+      <button type="submit" class="btn btn-primary" id="editor-save">儲存行程</button>
+    </footer>
+  </form>
+  <form method="post" id="editor-delete-form" hidden>{% csrf_token %}</form>
+</section>
