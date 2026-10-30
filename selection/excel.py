@@ -158,14 +158,14 @@ def period_times(value):
     return STANDARD_PERIOD_TIMES[min(numbers) - 1][1], STANDARD_PERIOD_TIMES[max(numbers) - 1][2]
 
 
-def entry(title, day, start, end, location="", note=""):
+def entry(title, day, start, end, location="", note="", teacher=""):
     if not title or len(title) > 100:
         raise ValueError("課程名稱需為 1–100 字")
     if start >= end:
         raise ValueError("結束時間必須晚於開始時間")
     if len(location) > 60:
         raise ValueError("教室／地點不得超過 60 字")
-    return {"title": title, "weekday": day, "start": start.strftime("%H:%M"), "end": end.strftime("%H:%M"), "location": location, "note": note[:2000]}
+    return {"title": title, "weekday": day, "weekday_name": "一二三四五六日"[day - 1], "start": start.strftime("%H:%M"), "end": end.strftime("%H:%M"), "location": location, "teacher": teacher, "note": note[:2000]}
 
 
 def parse_table(rows):
@@ -191,7 +191,8 @@ def parse_table(rows):
             if not title:
                 continue
             try:
-                note = " · ".join(filter(None, [text(get("teacher")), text(get("note"))]))
+                teacher = text(get("teacher"))
+                note = " · ".join(filter(None, [teacher, text(get("note"))]))
                 if "schedule" in columns and not text(get("weekday")):
                     raw = text(get("schedule"))
                     segments = re.findall(r"(?:星期|週|周|\()([一二三四五六日天])\)?\s*([^;；\n]+)", raw)
@@ -200,19 +201,22 @@ def parse_table(rows):
                     for day_name, segment in segments:
                         times = re.findall(r"\d{1,2}:\d{2}", segment)
                         start, end = (clock(times[0]), clock(times[1])) if len(times) == 2 else period_times(segment)
-                        parsed.append(entry(title, weekdays(day_name)[0], start, end, text(get("location")), note))
+                        parsed.append(entry(title, weekdays(day_name)[0], start, end, text(get("location")), note, teacher))
                 else:
                     start, end = (clock(get("start")), clock(get("end"))) if text(get("start")) and text(get("end")) else period_times(get("period"))
                     for day in weekdays(get("weekday")):
-                        parsed.append(entry(title, day, start, end, text(get("location")), note))
+                        parsed.append(entry(title, day, start, end, text(get("location")), note, teacher))
             except (ValueError, TypeError, IndexError):
                 errors.append(f"第 {index} 列「{title[:60]}」：無法辨識星期、時間或課程內容，請檢查欄位格式。")
         return parsed, errors
     for header, row in enumerate(rows[:25]):
         days = {}
+        short_day_headers = bool(row and normalize(row[0]) in {"節次", "時間", "時段"})
         for column, value in enumerate(row):
             if re.fullmatch(r"(?:星期|週|周)[一二三四五六日天]", text(value)):
                 days[column] = weekdays(value)[0]
+            elif column and short_day_headers and text(value) in DAY_NAMES:
+                days[column] = DAY_NAMES[text(value)]
         if len(days) < 3:
             continue
         parsed, errors = [], []
@@ -233,11 +237,14 @@ def parse_table(rows):
                     continue
                 lines = [line.strip() for line in content.splitlines() if line.strip()]
                 try:
-                    parsed.append(entry(lines[0], day, start, end, note="\n".join(lines[1:])))
+                    teacher = lines[1] if len(lines) > 1 else ""
+                    location = lines[2] if len(lines) > 2 else ""
+                    note = "\n".join([teacher, *lines[3:]]).strip()
+                    parsed.append(entry(lines[0], day, start, end, location=location, note=note, teacher=teacher))
                 except ValueError:
                     errors.append(f"第 {index} 列：課程名稱太長，請改用清單格式。")
         return parsed, errors
-    return [], ["找不到課程欄位，請使用課程清單（課程名稱、星期、開始／結束時間或節次），或以星期為欄的週課表。"]
+    return [], ["找不到課程欄位，請使用課程清單（課程名稱、星期、開始／結束時間或節次），或以「節次、一、二、三…」為欄的週課表。"]
 
 
 def parse_upload(upload):
