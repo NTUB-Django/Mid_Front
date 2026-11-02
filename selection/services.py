@@ -210,6 +210,15 @@ def build_personal_timetable(user, full_grid=True, viewer=None):
     has_evening = any(item["end"] > time(18, 5) for item in items)
 
 
+    # A row represents an interval, not its label. Excel imports (including
+    # existing records) may have no period name or use the time as their name.
+    standard_names = {(start, end): name for name, start, end in STANDARD_PERIODS}
+    item_periods = {}
+    for item in items:
+        interval = (item["start"], item["end"])
+        name = standard_names.get(interval, item["period"])
+        item_periods.setdefault(interval, (name, *interval))
+
     if full_grid:
         if has_evening:
             base_periods = list(STANDARD_PERIODS)
@@ -217,24 +226,21 @@ def build_personal_timetable(user, full_grid=True, viewer=None):
             base_periods = list(STANDARD_PERIODS[:9])
     else:
 
-        distinct_p = sorted({(i["period"], i["start"], i["end"]) for i in items}, key=lambda x: x[1])
-        base_periods = distinct_p or list(STANDARD_PERIODS[:8])
+        base_periods = list(item_periods.values()) or list(STANDARD_PERIODS[:8])
 
 
-    period_keys = [p[0] for p in base_periods]
-    for it in items:
-        p_name = it["period"]
-        if p_name not in period_keys:
+    period_keys = {(start, end) for _, start, end in base_periods}
+    for interval, period in item_periods.items():
+        if interval not in period_keys:
+            base_periods.append(period)
+            period_keys.add(interval)
+    base_periods.sort(key=lambda period: (period[1], period[2]))
 
-            base_periods.append((p_name, it["start"], it["end"]))
-            base_periods.sort(key=lambda x: x[1])
-            period_keys = [p[0] for p in base_periods]
-
-    period_index = {p[0]: i for i, p in enumerate(base_periods)}
+    period_index = {(start, end): i for i, (_, start, end) in enumerate(base_periods)}
     grid = {i: {d: [] for d in range(7)} for i in range(len(base_periods))}
 
     for it in items:
-        row_idx = period_index.get(it["period"])
+        row_idx = period_index.get((it["start"], it["end"]))
         if row_idx is not None and 1 <= it["weekday"] <= 7:
             grid[row_idx][it["weekday"] - 1].append(it)
 

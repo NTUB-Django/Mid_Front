@@ -1,3 +1,4 @@
+from datetime import time
 from io import BytesIO
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -7,6 +8,7 @@ from django.urls import reverse
 from accounts.models import User
 
 from .models import CustomSchedule
+from .services import STANDARD_PERIODS, build_personal_timetable
 
 
 class ExcelImportWorkflowTests(TestCase):
@@ -56,6 +58,50 @@ class ExcelImportWorkflowTests(TestCase):
         self.assertEqual(self.client.post(reverse("selection:excel_confirm"), {"token": token, "skip_conflicts": "yes"}).status_code, 302)
         self.assertEqual(CustomSchedule.objects.filter(user=self.student, import_source="excel").count(), 3)
         self.assertEqual(CustomSchedule.objects.get(user=self.student, title="作業系統").location, "電703")
+        page = self.client.get(reverse("selection:timetable"))
+        self.assertEqual(page.status_code, 200)
+        timetable = page.context["timetable"]
+        self.assertEqual(timetable["periods"], STANDARD_PERIODS[:9])
+        self.assertEqual(timetable["grid"][4][0][0]["name"], "作業系統")
+        self.assertContains(page, '<span class="tt-period-name">第五節</span>', html=True)
+        self.assertNotContains(page, '<span class="tt-period-name">13:30–14:20</span>', html=True)
+
+    def test_existing_imports_share_standard_rows_without_reimport(self):
+        for weekday, period in [(1, ""), (3, "13:30–14:20")]:
+            CustomSchedule.objects.create(
+                user=self.student, title="作業系統", weekday=weekday,
+                period=period, start=time(13, 30), end=time(14, 20),
+                import_source="excel",
+            )
+        for full_grid in (True, False):
+            with self.subTest(full_grid=full_grid):
+                timetable = build_personal_timetable(self.student, full_grid=full_grid)
+                matches = [i for i, period in enumerate(timetable["periods"])
+                           if period[1:] == (time(13, 30), time(14, 20))]
+                self.assertEqual(len(matches), 1)
+                index = matches[0]
+                self.assertEqual(timetable["periods"][index][0], "第五節")
+                self.assertEqual(timetable["grid"][index][0][0]["name"], "作業系統")
+                self.assertEqual(timetable["grid"][index][2][0]["name"], "作業系統")
+                self.assertEqual(timetable["total_items"], 2)
+        self.assertEqual(CustomSchedule.objects.filter(user=self.student, period="").count(), 1)
+
+    def test_nonstandard_intervals_with_same_label_remain_separate(self):
+        for start, end in [(time(12), time(12, 30)), (time(12, 30), time(13))]:
+            CustomSchedule.objects.create(
+                user=self.student, title="午間行程", weekday=1,
+                period="中午", start=start, end=end,
+            )
+        for full_grid in (True, False):
+            with self.subTest(full_grid=full_grid):
+                timetable = build_personal_timetable(self.student, full_grid=full_grid)
+                rows = [(i, period) for i, period in enumerate(timetable["periods"])
+                        if period[0] == "中午"]
+                self.assertEqual(len(rows), 2)
+                for index, period in rows:
+                    items = timetable["grid"][index][0]
+                    self.assertEqual(len(items), 1)
+                    self.assertEqual((items[0]["start"], items[0]["end"]), period[1:])
 
     def test_same_school_grid_saved_as_xlsx_is_recognized(self):
         from openpyxl import Workbook
