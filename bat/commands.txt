@@ -1,0 +1,77 @@
+NTUB Mid_Front 課堂展示：BAT 無法執行時的備用指令
+=================================================
+
+一、下載與進入專案（GitHub 私有 repo 需要有權限的帳號）
+git clone https://github.com/NTUB-Django/Mid_Front.git
+cd Mid_Front
+
+如果資料夾不在目前位置，先切換到你的實際專案路徑：
+PowerShell: Set-Location -LiteralPath "C:\你的路徑\Mid_Front"
+CMD: cd /d "C:\你的路徑\Mid_Front"
+
+二、檢查 Python
+py -3 --version
+如果沒有 py，改用：python --version
+需要 Python 3.10 以上。若未安裝，可使用：
+winget install --id Python.Python.3.12 --exact --scope user
+或從 https://www.python.org/downloads/windows/ 安裝，勾選 Add Python to PATH。
+安裝完成後請重新開啟終端機。
+
+三、安裝環境（只需要 Python，不需要 Node、npm 或資料庫）
+py -3 run.py setup
+沒有 py 時：python run.py setup
+
+四、啟動（固定使用相同網址，避免切到另一份瀏覽器資料）
+py -3 run.py
+沒有 py 時：python run.py
+在 Chrome 或 Edge 開啟：http://localhost:8000/
+帳號：ntub
+密碼：12345678
+終端機視窗必須保持開啟，按 Ctrl+C 停止。
+
+五、不使用 run.py 的完全手動方法
+py -3 -m venv .venv
+PowerShell:
+  & .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+  & .\.venv\Scripts\python.exe manage.py check
+  & .\.venv\Scripts\python.exe manage.py runserver 127.0.0.1:8000 --noreload
+CMD:
+  .venv\Scripts\python.exe -m pip install -r requirements.txt
+  .venv\Scripts\python.exe manage.py check
+  .venv\Scripts\python.exe manage.py runserver 127.0.0.1:8000 --noreload
+不需要 activate，不需要 migrate，也不會建立 db.sqlite3。
+
+六、8000 已被其他程式佔用
+先關閉之前開啟的展示視窗。若仍無法啟動，可改用：
+py -3 run.py --port 8001
+或 bat\02_start.bat -Port 8001
+再開啟 http://localhost:8001/
+注意：不同連接埠的 localStorage 各自獨立，不代表原本資料消失。
+
+七、檢查環境與測試
+py -3 run.py check
+.venv\Scripts\python.exe manage.py test demo --noinput
+若電腦另有 Node.js，可執行完整前端邏輯測試：
+node --test tests/*.test.mjs
+
+八、展示資料與備份
+登入後進入「資料與備份」：http://localhost:8000/demo/storage/
+匯出 JSON 備份可帶到另一台電腦還原。
+課表、行程、群組、個人資料存在目前瀏覽器的 localStorage：
+ntub.mid-front.state.v1
+同一瀏覽器、同一網址、同一連接埠重新啟動後仍會保留。
+localhost 與 127.0.0.1 不共用資料；無痕模式關閉後通常不會保留。
+請勿在清除網站資料前忘記備份。
+固定帳號密碼僅供前端展示，不是真正的安全驗證，請勿放入真實個資。
+
+九、Excel 匯入
+可使用原 Mid 支援的 PoolExport.xls、.xlsx 或 UTF-8 CSV。
+登入後進入「Excel／匯入紀錄」，也可下載課程清單或學校週課表範例。
+先預覽，確認後才會儲存；重複課程略過，可選擇略過衝堂。
+檔案只在瀏覽器處理，不會上傳到 Django。
+
+十、原版程式與本展示版
+完整 Mid 的原始 Django 程式與模板保留在 reference\mid。
+目前運作的前端位於 static\demo；Django 只提供網頁與本機靜態檔。
+老師展示時可使用右上「展示身分」切換學生、學校端及管理員介面。
+沒有連線正式 Mid、Cloudflare 或任何人的真實帳戶。

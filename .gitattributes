@@ -5,3 +5,7 @@
 *.css text eol=lf
 *.bat text eol=crlf
 *.png binary
+
+*.mjs text eol=lf
+*.ps1 text eol=crlf
+*.txt text eol=crlf

@@ -1,0 +1,16 @@
+{
+  "name": "ntub-timetable-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "React components embedded in Django templates for the NTUB timetable PWA.",
+  "scripts": {
+    "build": "esbuild frontend/timetable-mobile.jsx --bundle --minify --format=iife --target=es2020 --outfile=static/js/timetable-mobile.js --legal-comments=none"
+  },
+  "dependencies": {
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}
